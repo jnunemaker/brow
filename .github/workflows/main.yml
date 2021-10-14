@@ -1,29 +1,21 @@
-name: Ruby
-
-on:
-  push:
-    branches:
-      - main
-
-  pull_request:
-
+name: CI
+on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         ruby:
-          - 2.6
-          - 2.7
-          - 3.0
-
+          - '2.6'
+          - '2.7'
+          - '3.0'
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: ${{ matrix.ruby }}
-        bundler-cache: true
-    - name: Run the default task
-      run: bundle exec rake
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true # Run "bundle install", and cache the result automatically.
+      - name: Run Rake
+        run: bundle exec rake
