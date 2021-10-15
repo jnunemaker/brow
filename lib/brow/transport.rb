@@ -54,14 +54,18 @@ module Brow
       @logger.debug("Sending request for #{batch.length} items")
 
       last_response, exception = retry_with_backoff(@retries) do
-        status_code, body = send_request(batch)
+        response = send_request(batch)
+        status_code = response.code.to_i
+
+        # attempt to get error from response body json
         error = begin
-          json = JSON.parse(body)
+          json = JSON.parse(response.body)
           json ? json['error'] : nil
         rescue JSON::ParserError
           nil
         end
-        should_retry = should_retry_request?(status_code, body)
+
+        should_retry = should_retry_request?(status_code, response.body)
         @logger.debug("Response status code: #{status_code}")
         @logger.debug("Response error: #{error}") if error
 
@@ -138,8 +142,7 @@ module Brow
       else
         @http.start unless @http.started? # Maintain a persistent connection
         request = Net::HTTP::Post.new(@path, @headers)
-        response = @http.request(request, payload)
-        [response.code.to_i, response.body]
+        @http.request(request, payload)
       end
     end
   end
