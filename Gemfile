@@ -7,8 +7,8 @@ gem "rake", "~> 13.0"
 gem "minitest", "~> 5.0"
 
 group(:guard) do
-  gem 'guard'
-  gem 'guard-minitest'
-  gem 'guard-bundler'
-  gem 'rb-fsevent'
+  gem "guard", "~> 2.18.0"
+  gem "guard-minitest", "~> 2.4.6"
+  gem "guard-bundler", "~> 3.0.0"
+  gem "rb-fsevent", "~> 0.10"
 end

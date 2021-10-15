@@ -51,12 +51,12 @@ PLATFORMS
 
 DEPENDENCIES
   brow!
-  guard
-  guard-bundler
-  guard-minitest
+  guard (~> 2.18.0)
+  guard-bundler (~> 3.0.0)
+  guard-minitest (~> 2.4.6)
   minitest (~> 5.0)
   rake (~> 13.0)
-  rb-fsevent
+  rb-fsevent (~> 0.10)
 
 BUNDLED WITH
    2.2.29
