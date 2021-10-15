@@ -134,7 +134,6 @@ module Brow
 
       if self.class.stub
         @logger.debug "stubbed request to #{@path}: body=#{payload}"
-
         [200, '{}']
       else
         @http.start unless @http.started? # Maintain a persistent connection
