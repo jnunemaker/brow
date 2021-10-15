@@ -20,13 +20,13 @@ module Brow
     def initialize(options = {})
       options = Brow::Utils.symbolize_keys(options)
 
-      @logger = options.fetch(:logger) { Brow.logger }
-      @queue = Queue.new
+      @worker_thread = nil
+      @worker_mutex = Mutex.new
       @test = options[:test]
       @max_queue_size = options[:max_queue_size] || MAX_QUEUE_SIZE
-      @worker_mutex = Mutex.new
-      @worker = Worker.new(@queue, options)
-      @worker_thread = nil
+      @logger = options.fetch(:logger) { Brow.logger }
+      @queue = options.fetch(:queue) { Queue.new }
+      @worker = options.fetch(:worker) { Worker.new(@queue, options) }
 
       at_exit { @worker_thread && @worker_thread[:should_exit] = true }
     end
