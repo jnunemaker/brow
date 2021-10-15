@@ -4,6 +4,7 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "brow"
 
 require "minitest/autorun"
+require "minitest/heat"
 
 # Get rid of log output
 Brow.logger = Logger.new("/dev/null")
