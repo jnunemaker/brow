@@ -134,7 +134,7 @@ module Brow
       request = Net::HTTP::Post.new(@path, @headers)
 
       if self.class.stub
-        @logger.debug "stubbed request to #{@path}: batch = #{JSON.generate(batch)}"
+        @logger.debug "stubbed request to #{@path}: body=#{payload}"
 
         [200, '{}']
       else
