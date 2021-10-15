@@ -64,6 +64,10 @@ module Brow
       }
     end
 
+    def to_json
+      JSON.generate(as_json)
+    end
+
     private
 
     def item_count_exhausted?

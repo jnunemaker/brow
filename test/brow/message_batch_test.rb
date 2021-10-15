@@ -35,6 +35,21 @@ class BrowMessageBatchTest < Minitest::Test
     assert_equal expected, batch.as_json
   end
 
+  def test_to_json
+    batch = Brow::MessageBatch.new
+    3.times { |n| batch << {"number" => n}}
+    json = batch.to_json
+    expected_json = JSON.generate({
+      uuid: batch.uuid,
+      messages: [
+        {"number" => 0},
+        {"number" => 1},
+        {"number" => 2},
+      ]
+    })
+    assert_equal expected_json, json
+  end
+
   def test_append_message
     message = {"foo" => "bar"}
     batch = Brow::MessageBatch.new(max_size: 100)
