@@ -127,11 +127,10 @@ module Brow
 
     # Sends a request for the batch, returns [status_code, body]
     def send_request(batch)
-      payload = JSON.generate(
+      payload = JSON.generate({
         id: batch.uuid,
         messages: batch,
-      )
-      request = Net::HTTP::Post.new(@path, @headers)
+      })
 
       if self.class.stub
         @logger.debug "stubbed request to #{@path}: body=#{payload}"
@@ -139,6 +138,7 @@ module Brow
         [200, '{}']
       else
         @http.start unless @http.started? # Maintain a persistent connection
+        request = Net::HTTP::Post.new(@path, @headers)
         response = @http.request(request, payload)
         [response.code.to_i, response.body]
       end
