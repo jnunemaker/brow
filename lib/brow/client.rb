@@ -5,6 +5,7 @@ require 'time'
 
 require 'brow/utils'
 require 'brow/worker'
+require 'brow/test_queue'
 
 module Brow
   class Client

@@ -8,10 +8,6 @@ module Brow
       reset
     end
 
-    def [](key)
-      messages[key]
-    end
-
     def count
       messages.count
     end
