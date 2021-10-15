@@ -115,9 +115,10 @@ module Brow
       begin
         result, should_retry = yield
         return [result, nil] unless should_retry
-      rescue StandardError => e
+      rescue StandardError => error
+        @logger.debug "Request error: #{error}"
         should_retry = true
-        caught_exception = e
+        caught_exception = error
       end
 
       if should_retry && (retries_remaining > 1)
@@ -131,10 +132,7 @@ module Brow
 
     # Sends a request for the batch, returns [status_code, body]
     def send_request(batch)
-      payload = JSON.generate({
-        id: batch.uuid,
-        messages: batch,
-      })
+      payload = batch.to_json
 
       if self.class.stub
         @logger.debug "stubbed request to #{@path}: body=#{payload}"

@@ -14,7 +14,6 @@ module Brow
     MAX_BYTES = 512_000 # 500Kb
     MAX_SIZE = 100
 
-    def_delegators :@messages, :to_json
     def_delegators :@messages, :empty?
     def_delegators :@messages, :length
 
@@ -29,8 +28,8 @@ module Brow
     def <<(message)
       begin
         message_json = message.to_json
-      rescue StandardError => e
-        raise JSONGenerationError, "Serialization error: #{e}"
+      rescue StandardError => error
+        raise JSONGenerationError, "Serialization error: #{error}"
       end
 
       message_json_size = message_json.bytesize
@@ -50,6 +49,13 @@ module Brow
       @messages = []
       @json_size = 0
       @uuid = SecureRandom.uuid
+    end
+
+    def as_json
+      {
+        uuid: @uuid,
+        messages: @messages,
+      }
     end
 
     private
