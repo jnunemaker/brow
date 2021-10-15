@@ -10,14 +10,19 @@ module Brow
 
     class JSONGenerationError < ::Brow::Error; end
 
-    MESSAGE_MAX_BYTES = 32768 # 32Kb
+    # Maximum bytes for an individual message.
+    MAX_BYTES_PER_MESSAGE = 32_768 # 32Kb
+
+    # Maximum total bytes for a batch.
     MAX_BYTES = 512_000 # 500Kb
+
+    # Maximum number of messages in a batch.
     MAX_SIZE = 100
 
     def_delegators :@messages, :empty?
     def_delegators :@messages, :length
 
-    attr_reader :uuid
+    attr_reader :uuid, :json_size
 
     def initialize(options = {})
       clear
@@ -33,6 +38,7 @@ module Brow
       end
 
       message_json_size = message_json.bytesize
+
       if message_too_big?(message_json_size)
         @logger.error('a message exceeded the maximum allowed size')
       else
@@ -65,7 +71,7 @@ module Brow
     end
 
     def message_too_big?(message_json_size)
-      message_json_size > MESSAGE_MAX_BYTES
+      message_json_size > MAX_BYTES_PER_MESSAGE
     end
 
     # We consider the max size here as just enough to leave room for one more
@@ -77,7 +83,7 @@ module Brow
     # peeking, and to consider the next message size when calculating whether
     # the message can be accomodated in this batch.
     def size_exhausted?
-      @json_size >= (MAX_BYTES - MESSAGE_MAX_BYTES)
+      @json_size >= (MAX_BYTES - MAX_BYTES_PER_MESSAGE)
     end
   end
 end

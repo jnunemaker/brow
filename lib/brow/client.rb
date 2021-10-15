@@ -9,7 +9,8 @@ require 'brow/test_queue'
 
 module Brow
   class Client
-    QUEUE_MAX_SIZE = 10000
+    # Default # of items that can be in queue before we start dropping data.
+    MAX_QUEUE_SIZE = 10_000
 
     # Public: Create a new instance of a client.
     #
@@ -22,7 +23,7 @@ module Brow
       @logger = options.fetch(:logger) { Brow.logger }
       @queue = Queue.new
       @test = options[:test]
-      @max_queue_size = options[:max_queue_size] || QUEUE_MAX_SIZE
+      @max_queue_size = options[:max_queue_size] || MAX_QUEUE_SIZE
       @worker_mutex = Mutex.new
       @worker = Worker.new(@queue, options)
       @worker_thread = nil
