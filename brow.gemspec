@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["John Nunemaker"]
   spec.email         = ["nunemaker@gmail.com"]
 
-  spec.summary       = "A generic background thread worker for shipping events via http to some API backend."
+  spec.summary       = "A generic background thread worker for shipping events via https to some API backend."
   spec.homepage      = "https://github.com/jnunemaker/brow"
   spec.license       = "MIT"
   spec.required_ruby_version = ">= 2.6.0"
