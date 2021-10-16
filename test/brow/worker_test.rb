@@ -13,7 +13,7 @@ class BrowWorkerTest < Minitest::Test
   def test_initialize_with_options
     queue = Queue.new
     on_error = ->(*) { }
-    transport = Brow::Transport.new
+    transport = NoopTransport.new
     logger = Logger.new(STDOUT)
     batch = Brow::MessageBatch.new
     worker = Brow::Worker.new(queue, {
@@ -31,8 +31,7 @@ class BrowWorkerTest < Minitest::Test
   def test_initialize_with_transport_options
     queue = Queue.new
     worker = Brow::Worker.new(queue, {
-      host: "foo.com",
-      path: "/bar",
+      url: "https://foo.com/bar",
       retries: 5,
       read_timeout: 1,
       open_timeout: 2,
@@ -49,14 +48,17 @@ class BrowWorkerTest < Minitest::Test
 
   def test_initialize_with_batch_size
     queue = Queue.new
-    worker = Brow::Worker.new(queue, batch_size: 3)
+    worker = Brow::Worker.new(queue, {
+      batch_size: 3,
+      transport: NoopTransport.new,
+    })
     assert_equal 3, worker.instance_variable_get("@batch").instance_variable_get("@max_size")
   end
 
   def test_run_does_not_error_if_the_request_fails
     queue = Queue.new
     queue << {foo: "bar"}
-    transport = Brow::Transport.new
+    transport = NoopTransport.new
     transport.stub :send_batch, Brow::Response.new(-1, "Unknown Error") do
       worker = Brow::Worker.new(queue, transport: transport)
       worker.run
@@ -67,7 +69,7 @@ class BrowWorkerTest < Minitest::Test
   def test_run_with_invalid_request
     queue = Queue.new
     queue << {foo: "bar"}
-    transport = Brow::Transport.new
+    transport = NoopTransport.new
     transport.stub :send_batch, Brow::Response.new(400, "Some Error") do
       status = error = nil
       on_error = proc do |yielded_status, yielded_error|
@@ -95,7 +97,10 @@ class BrowWorkerTest < Minitest::Test
     end
 
     queue = Queue.new
-    worker = Brow::Worker.new(queue, on_error: on_error)
+    worker = Brow::Worker.new(queue, {
+      on_error: on_error,
+      transport: NoopTransport.new,
+    })
     worker.run
     assert_predicate queue, :empty?
     assert_predicate calls, :empty?
@@ -126,14 +131,14 @@ class BrowWorkerTest < Minitest::Test
 
   def test_requesting_without_current_batch
     queue = Queue.new
-    worker = Brow::Worker.new(queue)
+    worker = Brow::Worker.new(queue, transport: NoopTransport.new)
     refute_predicate worker, :requesting?
   end
 
   def test_requesting_with_current_batch
     queue = Queue.new
     queue << {foo: "bar"}
-    transport = Brow::Transport.new
+    transport = NoopTransport.new
     response = ->(*) {
       sleep 0.2
       Brow::Response.new(200, 'Success')
