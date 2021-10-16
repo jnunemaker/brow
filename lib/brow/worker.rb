@@ -17,9 +17,13 @@ module Brow
     # options - The Hash of worker options.
     #           batch_size - Fixnum of how many items to send in a batch.
     #           on_error - Proc of what to do on an error.
+    #           transport - The Transport object to deliver batches.
+    #           logger - The Logger object for all log messages.
+    #           batch - The MessageBatch to collect messages and deliver batches
+    #                   via Transport.
     def initialize(queue, options = {})
-      @lock = Mutex.new
       @queue = queue
+      @lock = Mutex.new
       options = Brow::Utils.symbolize_keys(options)
       @on_error = options[:on_error] || DEFAULT_ON_ERROR
       @transport = options.fetch(:transport) { Transport.new(options) }

@@ -30,21 +30,21 @@ module Brow
     def initialize(options = {})
       @host = options[:host] || HOST
       @port = options[:port] || PORT
-      @ssl = options[:ssl] || SSL
       @headers = options[:headers] || HEADERS
       @path = options[:path] || PATH
-
       @retries = options[:retries] || RETRIES
-      @read_timeout = options[:read_timeout] || 8
-      @open_timeout = options[:open_timeout] || 4
 
       @logger = options.fetch(:logger) { Brow.logger }
       @backoff_policy = options.fetch(:backoff_policy) { Brow::BackoffPolicy.new }
 
+      ssl = options[:ssl] || SSL
+      read_timeout = options[:read_timeout] || 8
+      open_timeout = options[:open_timeout] || 4
+
       @http = Net::HTTP.new(@host, @port)
-      @http.use_ssl = @ssl
-      @http.read_timeout = @read_timeout
-      @http.open_timeout = @open_timeout
+      @http.use_ssl = ssl
+      @http.read_timeout = read_timeout
+      @http.open_timeout = open_timeout
     end
 
     # Sends a batch of messages to the API
