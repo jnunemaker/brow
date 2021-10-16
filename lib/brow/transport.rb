@@ -10,7 +10,7 @@ module Brow
   class Transport
     HOST = 'requestbin.net'
     PORT = 443
-    PATH = '/r/gpj4ybzc'
+    PATH = '/r/c5tqqybi'
     SSL = true
     RETRIES = 10
     HEADERS = {

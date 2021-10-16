@@ -4,6 +4,7 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "brow"
 
 require "minitest/autorun"
+require "webmock/minitest"
 require "minitest/heat"
 
 # Get rid of log output
@@ -32,5 +33,14 @@ class DummyWorker
 
   def requesting?
     false
+  end
+end
+
+class NoopTransport
+  def send_batch(*)
+    Brow::Response.new(200, "Success")
+  end
+
+  def shutdown(*)
   end
 end

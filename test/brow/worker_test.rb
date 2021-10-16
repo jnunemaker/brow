@@ -112,14 +112,15 @@ class BrowWorkerTest < Minitest::Test
       calls << [status, error]
     end
 
+    transport = NoopTransport.new
     queue = Queue.new
     queue << {foo: "bar"}
     queue << {bad: bad}
-    worker = Brow::Worker.new(queue, on_error: on_error)
+    worker = Brow::Worker.new(queue, on_error: on_error, transport: transport)
     worker.run
 
     assert_predicate queue, :empty?
-    assert_equal 1, calls.size
+    assert_equal 1, calls.size, "Expected calls.size to be 1 but was #{calls.size} (calls: #{calls.inspect})"
     assert_instance_of Brow::MessageBatch::JSONGenerationError, calls[0][1]
   end
 
