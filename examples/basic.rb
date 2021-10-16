@@ -1,9 +1,7 @@
 require_relative "../lib/brow"
 
 client = Brow::Client.new({
-  host: "requestbin.net",
-  path: "/r/c5tqqybi",
-  ssl: true,
+  url: "https://requestbin.net/r/c5tqqybi",
 })
 
 50.times do |n|

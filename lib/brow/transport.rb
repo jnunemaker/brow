@@ -28,16 +28,25 @@ module Brow
     end
 
     def initialize(options = {})
-      @host = options[:host] || HOST
-      @port = options[:port] || PORT
+      if url = options[:url]
+        uri = URI.parse(url)
+        @host = uri.host
+        @port = uri.port
+        @path = uri.path
+        ssl = uri.scheme == "https"
+      else
+        @host = options[:host] || HOST
+        @port = options[:port] || PORT
+        @path = options[:path] || PATH
+        ssl = options[:ssl] || SSL
+      end
+
       @headers = options[:headers] || HEADERS
-      @path = options[:path] || PATH
       @retries = options[:retries] || RETRIES
 
       @logger = options.fetch(:logger) { Brow.logger }
       @backoff_policy = options.fetch(:backoff_policy) { Brow::BackoffPolicy.new }
 
-      ssl = options[:ssl] || SSL
       read_timeout = options[:read_timeout] || 8
       open_timeout = options[:open_timeout] || 4
 
