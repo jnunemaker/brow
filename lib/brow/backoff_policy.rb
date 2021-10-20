@@ -2,18 +2,29 @@
 
 module Brow
   class BackoffPolicy
+    # Private: The default minimum timeout between intervals in milliseconds.
     MIN_TIMEOUT_MS = 100
+
+    # Private: The default maximum timeout between intervals in milliseconds.
     MAX_TIMEOUT_MS = 10000
+
+    # Private: The value to multiply the current interval with for each
+    # retry attempt.
     MULTIPLIER = 1.5
+
+    # Private: The randomization factor to use to create a range around the
+    # retry interval.
     RANDOMIZATION_FACTOR = 0.5
 
-    # @param [Hash] options
-    # @option options [Numeric] :min_timeout_ms The minimum backoff timeout
-    # @option options [Numeric] :max_timeout_ms The maximum backoff timeout
-    # @option options [Numeric] :multiplier The value to multiply the current
-    #   interval with for each retry attempt
-    # @option options [Numeric] :randomization_factor The randomization factor
-    #   to use to create a range around the retry interval
+    # Public: Create new instance of backoff policy.
+    #
+    # options - The Hash of options.
+    #   :min_timeout_ms - The minimum backoff timeout.
+    #   :max_timeout_ms - The maximum backoff timeout.
+    #   :multiplier - The value to multiply the current interval with for each
+    #                 retry attempt.
+    #   :randomization_factor - The randomization factor to use to create a range
+    #                           around the retry interval.
     def initialize(options = {})
       @min_timeout_ms = options[:min_timeout_ms] || MIN_TIMEOUT_MS
       @max_timeout_ms = options[:max_timeout_ms] || MAX_TIMEOUT_MS
@@ -23,7 +34,7 @@ module Brow
       @attempts = 0
     end
 
-    # @return [Numeric] the next backoff interval, in milliseconds.
+    # Public: Returns the next backoff interval in milliseconds.
     def next_interval
       interval = @min_timeout_ms * (@multiplier**@attempts)
       interval = add_jitter(interval, @randomization_factor)

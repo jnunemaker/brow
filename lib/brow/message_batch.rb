@@ -4,19 +4,20 @@ require 'securerandom'
 require 'forwardable'
 
 module Brow
-  # A batch of `Message`s to be sent to the API
+  # Internal: A batch of messages to be sent to the API.
   class MessageBatch
     extend Forwardable
 
+    # Private: The error raised when a message cannot be serialized to json.
     class JSONGenerationError < ::Brow::Error; end
 
-    # Maximum bytes for an individual message.
+    # Private: Maximum bytes for an individual message.
     MAX_BYTES_PER_MESSAGE = 32_768 # 32Kb
 
-    # Maximum total bytes for a batch.
+    # Private: Maximum total bytes for a batch.
     MAX_BYTES = 512_000 # 500Kb
 
-    # Maximum number of messages in a batch.
+    # Private: Maximum number of messages in a batch.
     MAX_SIZE = 100
 
     def_delegators :@messages, :empty?

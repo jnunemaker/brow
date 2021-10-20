@@ -69,6 +69,13 @@ class BrowClientTest < Minitest::Test
     assert_equal expected, item
   end
 
+  def test_record_without_hash
+    client = build_client
+    assert_raises ArgumentError do
+      client.record("nope")
+    end
+  end
+
   def test_record_when_full
     event = {foo: "bar"}
     client = build_client(max_queue_size: 1)

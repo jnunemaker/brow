@@ -17,7 +17,11 @@ class BrowTransportTest < Minitest::Test
   end
 
   def test_initialize_with_options
-    headers = {"Some-Token" => "asdf"}
+    headers = {
+      "Some-Token" => "asdf",
+      "Accept"=>"text/plain",
+      "Content-Type"=>"text/plain",
+    }
     logger = Logger.new("/dev/null")
     backoff_policy = Brow::BackoffPolicy.new
     transport = Brow::Transport.new({
@@ -27,7 +31,28 @@ class BrowTransportTest < Minitest::Test
       logger: logger,
       backoff_policy: backoff_policy,
     })
-    assert_equal headers, transport.instance_variable_get("@headers")
+    transport_headers = transport.instance_variable_get("@headers")
+
+    # includes defaults that weren't overwritten
+    assert_equal "brow-ruby/#{Brow::VERSION}", transport_headers.fetch("User-Agent")
+    assert_equal "ruby", transport_headers.fetch("Client-Language")
+    assert_equal "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
+      transport_headers.fetch("Client-Language-Version")
+
+      assert_equal RUBY_PLATFORM, transport_headers.fetch("Client-Platform")
+    assert_equal RUBY_ENGINE, transport_headers.fetch("Client-Engine")
+
+    refute_nil transport_headers.fetch("Client-Thread")
+    refute_nil transport_headers.fetch("Client-Pid")
+    refute_nil transport_headers.fetch("Client-Hostname")
+
+    # overwrites default headers if provided
+    assert_equal "text/plain", transport_headers.fetch("Accept")
+    assert_equal "text/plain", transport_headers.fetch("Content-Type")
+
+    # adds new headers
+    assert_equal "asdf", transport_headers.fetch("Some-Token")
+
     assert_equal logger, transport.instance_variable_get("@logger")
     assert_equal backoff_policy, transport.instance_variable_get("@backoff_policy")
     http = transport.instance_variable_get("@http")

@@ -6,6 +6,7 @@ require "logger"
 module Brow
   class Error < StandardError; end
 
+  # Public: Returns the logger instance to use for logging of things.
   def self.logger
     return @logger if @logger
 
@@ -18,6 +19,7 @@ module Brow
     @logger = PrefixedLogger.new(base_logger, "[brow]")
   end
 
+  # Public: Sets the logger instance to use for logging things.
   def self.logger=(new_logger)
     @logger = new_logger
   end

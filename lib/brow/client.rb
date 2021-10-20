@@ -9,14 +9,14 @@ require_relative 'test_queue'
 
 module Brow
   class Client
-    # Default # of items that can be in queue before we start dropping data.
+    # Private: Default # of items that can be in queue before we start dropping data.
     MAX_QUEUE_SIZE = 10_000
 
     # Public: Create a new instance of a client.
     #
     # options - The Hash of options.
-    #   :max_queue_size Maximum number of calls to be remain queued.
-    #   :on_error The Proc that handles error calls from the API.
+    #   :max_queue_size - The maximum number of calls to be remain queued.
+    #   :on_error - The Proc that handles error calls from the API.
     def initialize(options = {})
       options = Brow::Utils.symbolize_keys(options)
 
@@ -31,7 +31,7 @@ module Brow
       at_exit { @worker_thread && @worker_thread[:should_exit] = true }
     end
 
-    # Synchronously waits until the worker has flushed the queue.
+    # Public: Synchronously waits until the worker has flushed the queue.
     #
     # Use only for scripts which are not long-running, and will
     # specifically exit.
@@ -48,6 +48,8 @@ module Brow
     #
     # Returns Boolean of whether the item was added to the queue.
     def record(event)
+      raise ArgumentError, "event must be a Hash" unless event.is_a?(Hash)
+
       event = Brow::Utils.symbolize_keys(event)
       event = Brow::Utils.isoify_dates(event)
       enqueue event
@@ -58,6 +60,9 @@ module Brow
       @queue.length
     end
 
+    # Public: For test purposes only. If test: true is passed to #initialize
+    # then all recording of events will go to test queue in memory so they can
+    # be verified with assertions.
     def test_queue
       unless @test
         raise 'Test queue only available when setting :test to true.'

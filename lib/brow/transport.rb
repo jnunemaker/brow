@@ -11,9 +11,16 @@ module Brow
   class Transport
     RETRIES = 10
     HEADERS = {
-      'Accept' => 'application/json',
-      'Content-Type' => 'application/json',
-      'User-Agent' => "brow-ruby/#{Brow::VERSION}",
+      "Accept" => "application/json",
+      "Content-Type" => "application/json",
+      "User-Agent" => "brow-ruby/#{Brow::VERSION}",
+      "Client-Language" => "ruby",
+      "Client-Language-Version" => "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
+      "Client-Platform" => RUBY_PLATFORM,
+      "Client-Engine" => defined?(RUBY_ENGINE) ? RUBY_ENGINE : "",
+      "Client-Pid" => Process.pid.to_s,
+      "Client-Thread" => Thread.current.object_id.to_s,
+      "Client-Hostname" => Socket.gethostname,
     }
 
     attr_reader :url
@@ -22,15 +29,18 @@ module Brow
       @url = options[:url] || raise(ArgumentError, ":url is required to be present so we know where to send batches")
       @uri = URI.parse(@url)
 
-      if @uri.path == ""
+      # Default path if people forget a slash.
+      if @uri.path.nil? || @uri.path.empty?
         @uri.path = "/"
       end
 
-      @headers = options[:headers] || HEADERS
+      @headers = HEADERS.merge(options[:headers] || {})
       @retries = options[:retries] || RETRIES
 
       @logger = options.fetch(:logger) { Brow.logger }
-      @backoff_policy = options.fetch(:backoff_policy) { Brow::BackoffPolicy.new }
+      @backoff_policy = options.fetch(:backoff_policy) {
+        Brow::BackoffPolicy.new
+      }
 
       @http = Net::HTTP.new(@uri.host, @uri.port)
       @http.use_ssl = @uri.scheme == "https"

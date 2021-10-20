@@ -1,25 +1,25 @@
 module Brow
-  # Wraps an existing logger and adds a prefix to all messages
+  # Internal: Wraps an existing logger and adds a prefix to all messages.
   class PrefixedLogger
     def initialize(logger, prefix)
       @logger = logger
       @prefix = prefix
     end
 
-    def debug(msg)
-      @logger.debug("#{@prefix} #{msg}")
+    def debug(message)
+      @logger.debug("#{@prefix} #{message}")
     end
 
-    def info(msg)
-      @logger.info("#{@prefix} #{msg}")
+    def info(message)
+      @logger.info("#{@prefix} #{message}")
     end
 
-    def warn(msg)
-      @logger.warn("#{@prefix} #{msg}")
+    def warn(message)
+      @logger.warn("#{@prefix} #{message}")
     end
 
-    def error(msg)
-      @logger.error("#{@prefix} #{msg}")
+    def error(message)
+      @logger.error("#{@prefix} #{message}")
     end
   end
 end

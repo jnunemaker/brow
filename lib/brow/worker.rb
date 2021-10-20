@@ -5,10 +5,11 @@ require_relative 'transport'
 require_relative 'utils'
 
 module Brow
+  # Internal: The Worker to pull items off the queue and put them
   class Worker
     DEFAULT_ON_ERROR = proc { |status, error| }
 
-    # Public: Creates a new worker
+    # Internal: Creates a new worker
     #
     # The worker continuously takes messages off the queue and makes requests to
     # the api.
@@ -31,7 +32,7 @@ module Brow
       @batch = options.fetch(:batch) { MessageBatch.new(max_size: options[:batch_size]) }
     end
 
-    # Public: Continuously runs the loop to check for new events
+    # Internal: Continuously runs the loop to check for new events
     def run
       until Thread.current[:should_exit]
         return if @queue.empty?
@@ -49,7 +50,7 @@ module Brow
       @transport.shutdown
     end
 
-    # Public: Check whether we have outstanding requests.
+    # Internal: Check whether we have outstanding requests.
     def requesting?
       @lock.synchronize { !@batch.empty? }
     end

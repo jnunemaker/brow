@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module Brow
+  # Public: The test queue to use if the `Client` is in test mode. Keeps all
+  # messages in an array so you can add assertions.
+  #
+  # Be sure to reset before each test case.
   class TestQueue
     attr_reader :messages
 
