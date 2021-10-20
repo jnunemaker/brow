@@ -8,10 +8,6 @@ require 'json'
 
 module Brow
   class Transport
-    HOST = 'requestbin.net'
-    PORT = 443
-    PATH = '/r/c5tqqybi'
-    SSL = true
     RETRIES = 10
     HEADERS = {
       'Accept' => 'application/json',
@@ -19,27 +15,11 @@ module Brow
       'User-Agent' => "brow-ruby/#{Brow::VERSION}",
     }
 
-    class << self
-      attr_writer :stub
-
-      def stub
-        @stub || ENV['STUB']
-      end
-    end
+    attr_reader :url
 
     def initialize(options = {})
-      if url = options[:url]
-        uri = URI.parse(url)
-        @host = uri.host
-        @port = uri.port
-        @path = uri.path
-        ssl = uri.scheme == "https"
-      else
-        @host = options[:host] || HOST
-        @port = options[:port] || PORT
-        @path = options[:path] || PATH
-        ssl = options[:ssl] || SSL
-      end
+      @url = options[:url] || raise(ArgumentError, ":url is required to be present so we know where to send batches")
+      @uri = URI.parse(@url)
 
       @headers = options[:headers] || HEADERS
       @retries = options[:retries] || RETRIES
@@ -47,13 +27,10 @@ module Brow
       @logger = options.fetch(:logger) { Brow.logger }
       @backoff_policy = options.fetch(:backoff_policy) { Brow::BackoffPolicy.new }
 
-      read_timeout = options[:read_timeout] || 8
-      open_timeout = options[:open_timeout] || 4
-
-      @http = Net::HTTP.new(@host, @port)
-      @http.use_ssl = ssl
-      @http.read_timeout = read_timeout
-      @http.open_timeout = open_timeout
+      @http = Net::HTTP.new(@uri.host, @uri.port)
+      @http.use_ssl = @uri.scheme == "https"
+      @http.read_timeout = options[:read_timeout] || 8
+      @http.open_timeout = options[:open_timeout] || 4
     end
 
     # Sends a batch of messages to the API
@@ -65,20 +42,10 @@ module Brow
       last_response, exception = retry_with_backoff(@retries) do
         response = send_request(batch)
         status_code = response.code.to_i
-
-        # attempt to get error from response body json
-        error = begin
-          json = JSON.parse(response.body)
-          json ? json['error'] : nil
-        rescue JSON::ParserError
-          nil
-        end
-
         should_retry = should_retry_request?(status_code, response.body)
         @logger.debug("Response status code: #{status_code}")
-        @logger.debug("Response error: #{error}") if error
 
-        [Response.new(status_code, error), should_retry]
+        [Response.new(status_code, nil), should_retry]
       end
 
       if exception
@@ -99,12 +66,17 @@ module Brow
 
     def should_retry_request?(status_code, body)
       if status_code >= 500
-        true # Server error
+        # Server error. Retry and log.
+        @logger.info("Server error: status=#{status_code}, body=#{body}")
+        true
       elsif status_code == 429
-        true # Rate limited
+        # Rate limited
+        @logger.info "Rate limit error"
+        true
       elsif status_code >= 400
-        @logger.error(body)
-        false # Client error. Do not retry, but log
+        # Client error. Do not retry, but log.
+        @logger.error("Client error: status=#{status_code}, body=#{body}")
+        false
       else
         false
       end
@@ -142,15 +114,9 @@ module Brow
     # Sends a request for the batch, returns [status_code, body]
     def send_request(batch)
       payload = batch.to_json
-
-      if self.class.stub
-        @logger.debug "stubbed request to #{@path}: body=#{payload}"
-        [200, '{}']
-      else
-        @http.start unless @http.started? # Maintain a persistent connection
-        request = Net::HTTP::Post.new(@path, @headers)
-        @http.request(request, payload)
-      end
+      @http.start unless @http.started? # Maintain a persistent connection
+      request = Net::HTTP::Post.new(@uri.path, @headers)
+      @http.request(request, payload)
     end
   end
 end

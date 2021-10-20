@@ -3,8 +3,10 @@ require "test_helper"
 class BrowWorkerTest < Minitest::Test
   def test_initialize
     queue = Queue.new
-    worker = Brow::Worker.new(queue)
-    assert_instance_of Brow::Transport, worker.instance_variable_get("@transport")
+    worker = Brow::Worker.new(queue, url: "https://foo.com/bar")
+    transport = worker.instance_variable_get("@transport")
+    assert_instance_of Brow::Transport, transport
+    assert_equal "https://foo.com/bar", transport.url
     assert_instance_of Brow::MessageBatch, worker.instance_variable_get("@batch")
     assert_equal 100, worker.instance_variable_get("@batch").instance_variable_get("@max_size")
     assert_equal Brow.logger, worker.instance_variable_get("@logger")
@@ -37,8 +39,7 @@ class BrowWorkerTest < Minitest::Test
       open_timeout: 2,
     })
     transport = worker.instance_variable_get("@transport")
-    assert_equal "foo.com", transport.instance_variable_get("@host")
-    assert_equal "/bar", transport.instance_variable_get("@path")
+    assert_equal "https://foo.com/bar", transport.url
     assert_equal 5, transport.instance_variable_get("@retries")
 
     http = transport.instance_variable_get("@http")
