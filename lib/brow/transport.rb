@@ -18,8 +18,6 @@ module Brow
       "Client-Language-Version" => "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
       "Client-Platform" => RUBY_PLATFORM,
       "Client-Engine" => defined?(RUBY_ENGINE) ? RUBY_ENGINE : "",
-      "Client-Pid" => Process.pid.to_s,
-      "Client-Thread" => Thread.current.object_id.to_s,
       "Client-Hostname" => Socket.gethostname,
     }
 
@@ -34,7 +32,10 @@ module Brow
         @uri.path = "/"
       end
 
-      @headers = HEADERS.merge(options[:headers] || {})
+      @headers = HEADERS.merge(options[:headers] || {}).merge({
+        "Client-Pid" => Process.pid.to_s,
+        "Client-Thread" => Thread.current.object_id.to_s,
+      })
       @retries = options[:retries] || RETRIES
 
       @logger = options.fetch(:logger) { Brow.logger }
