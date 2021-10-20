@@ -34,6 +34,17 @@ class BrowTransportTest < Minitest::Test
     assert_predicate http, :use_ssl?
   end
 
+  def test_send_batch_with_no_path
+    stub_request(:post, "https://foo.com/").to_return(status: 201)
+
+    transport = Brow::Transport.new(url: "https://foo.com", retries: 1)
+    response = transport.send_batch(@batch)
+    assert_equal 201, response.status
+    assert_nil response.error
+
+    assert_requested :post, "https://foo.com/"
+  end
+
   def test_send_batch
     stub_request(:post, "https://foo.com/bar")
       .with({

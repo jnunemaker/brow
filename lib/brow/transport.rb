@@ -22,6 +22,10 @@ module Brow
       @url = options[:url] || raise(ArgumentError, ":url is required to be present so we know where to send batches")
       @uri = URI.parse(@url)
 
+      if @uri.path == ""
+        @uri.path = "/"
+      end
+
       @headers = options[:headers] || HEADERS
       @retries = options[:retries] || RETRIES
 
