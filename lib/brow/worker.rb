@@ -7,7 +7,7 @@ require_relative 'utils'
 module Brow
   # Internal: The Worker to pull items off the queue and put them
   class Worker
-    DEFAULT_ON_ERROR = proc { |status, error| }
+    DEFAULT_ON_ERROR = proc { |response| }
 
     # Internal: Creates a new worker
     #
@@ -42,7 +42,7 @@ module Brow
         end
 
         response = @transport.send_batch @batch
-        @on_error.call(response.status, response.error) unless response.status == 200
+        @on_error.call(response) unless response.status == 200
 
         @lock.synchronize { @batch.clear }
       end
@@ -60,7 +60,7 @@ module Brow
     def consume_message_from_queue!
       @batch << @queue.pop
     rescue MessageBatch::JSONGenerationError => error
-      @on_error.call(-1, error)
+      @on_error.call(Response.new(-1, error))
     end
   end
 end

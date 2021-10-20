@@ -73,9 +73,9 @@ class BrowWorkerTest < Minitest::Test
     transport = NoopTransport.new
     transport.stub :send_batch, Brow::Response.new(400, "Some Error") do
       status = error = nil
-      on_error = proc do |yielded_status, yielded_error|
+      on_error = proc do |yielded_response|
         sleep 0.2 # Make this take longer than thread spin-up (below)
-        status, error = yielded_status, yielded_error
+        status, error = yielded_response.status, yielded_response.error
       end
       worker = Brow::Worker.new(queue, transport: transport, on_error: on_error)
 
@@ -93,9 +93,7 @@ class BrowWorkerTest < Minitest::Test
 
   def test_run_with_valid_request
     calls = []
-    on_error = proc do |status, error|
-      calls << [status, error]
-    end
+    on_error = proc { |yielded_response| calls << yielded_response }
 
     queue = Queue.new
     worker = Brow::Worker.new(queue, {
@@ -114,10 +112,7 @@ class BrowWorkerTest < Minitest::Test
     end
 
     calls = []
-    on_error = proc do |status, error|
-      calls << [status, error]
-    end
-
+    on_error = proc { |yielded_response| calls << yielded_response }
     transport = NoopTransport.new
     queue = Queue.new
     queue << {foo: "bar"}
@@ -127,7 +122,7 @@ class BrowWorkerTest < Minitest::Test
 
     assert_predicate queue, :empty?
     assert_equal 1, calls.size, "Expected calls.size to be 1 but was #{calls.size} (calls: #{calls.inspect})"
-    assert_instance_of Brow::MessageBatch::JSONGenerationError, calls[0][1]
+    assert_instance_of Brow::MessageBatch::JSONGenerationError, calls[0].error
   end
 
   def test_requesting_without_current_batch
