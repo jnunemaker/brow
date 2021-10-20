@@ -93,7 +93,7 @@ class BrowTransportTest < Minitest::Test
       retries: 2,
     })
     response = transport.send_batch(@batch)
-    assert_equal -1, response.status
+    assert_equal (-1), response.status
     assert_equal "execution expired", response.error
   end
 
