@@ -1,8 +1,6 @@
 # Brow
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/brow`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+A generic background thread worker for shipping events via https to some API backend.
 
 ## Installation
 
@@ -22,7 +20,22 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```ruby
+require "brow"
+
+client = Brow::Client.new({
+  url: "https://requestbin.net/r/rna67for",
+})
+
+50.times do |n|
+  client.record({
+    number: n,
+    now: Time.now.utc,
+  })
+end
+
+client.flush
+```
 
 ## Development
 
