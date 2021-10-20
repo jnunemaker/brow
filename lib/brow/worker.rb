@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'brow/message_batch'
-require 'brow/transport'
-require 'brow/utils'
+require_relative 'message_batch'
+require_relative 'transport'
+require_relative 'utils'
 
 module Brow
   class Worker

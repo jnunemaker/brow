@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
-require 'brow/response'
-require 'brow/backoff_policy'
 require 'net/http'
 require 'net/https'
 require 'json'
+
+require_relative 'response'
+require_relative 'backoff_policy'
 
 module Brow
   class Transport

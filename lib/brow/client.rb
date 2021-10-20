@@ -3,9 +3,9 @@
 require 'thread'
 require 'time'
 
-require 'brow/utils'
-require 'brow/worker'
-require 'brow/test_queue'
+require_relative 'utils'
+require_relative 'worker'
+require_relative 'test_queue'
 
 module Brow
   class Client
