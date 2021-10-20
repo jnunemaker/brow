@@ -2,6 +2,14 @@
 
 A generic background thread worker for shipping events via https to some API backend.
 
+I've been wanting to build something like this for a while. This might be a terrible start. But its a start.
+
+I noticed a lot of companies copied segment's [analytics-ruby](https://github.com/segmentio/analytics-ruby) project and are using it successfully.
+
+So that's where I began. Seems safe to assume that project has been around long enough and is production hardened enough. I guess I'll find out. :)
+
+Things around here are pretty basic for now. But I'm looking to spruce it up and production test it over the coming months &mdash; likely with [Flipper](https://github.com/jnunemaker/flipper) and [Flipper Cloud](https://www.flippercloud.io/?utm_source=brow&utm_medium=web&utm_campaign=readme).
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -34,6 +42,7 @@ client = Brow::Client.new({
   })
 end
 
+# batch of 50 events sent to api url above as json
 client.flush
 ```
 
