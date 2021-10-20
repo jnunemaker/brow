@@ -48,7 +48,9 @@ module Brow
     #
     # Returns Boolean of whether the item was added to the queue.
     def record(event)
-      enqueue Brow::Utils.symbolize_keys(event)
+      event = Brow::Utils.symbolize_keys(event)
+      event = Brow::Utils.isoify_dates(event)
+      enqueue event
     end
 
     # Public: Returns the number of messages in the queue.

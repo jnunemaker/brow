@@ -1,11 +1,14 @@
 require_relative "../lib/brow"
 
 client = Brow::Client.new({
-  url: "https://requestbin.net/r/c5tqqybi",
+  url: "https://requestbin.net/r/rna67for",
 })
 
 50.times do |n|
-  client.record({number: n})
+  client.record({
+    number: n,
+    now: Time.now.utc,
+  })
 end
 
 client.flush
