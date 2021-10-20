@@ -1,6 +1,6 @@
 # Brow
 
-A generic background thread worker for shipping events via https to some API backend.
+A generic background thread worker for shipping events via https to some API backend. It'll get events to your API by the sweat of its brow.
 
 I've been wanting to build something like this for a while. This might be a terrible start. But its a start.
 
