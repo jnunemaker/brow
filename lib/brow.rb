@@ -10,13 +10,11 @@ module Brow
   def self.logger
     return @logger if @logger
 
-    base_logger = if defined?(Rails)
+    @logger = if defined?(Rails)
       Rails.logger
     else
       Logger.new(STDOUT)
     end
-
-    @logger = PrefixedLogger.new(base_logger, "[brow]")
   end
 
   # Public: Sets the logger instance to use for logging things.
@@ -26,4 +24,3 @@ module Brow
 end
 
 require_relative "brow/client"
-require_relative "brow/prefixed_logger"

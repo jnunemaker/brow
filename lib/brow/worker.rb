@@ -28,7 +28,6 @@ module Brow
       options = Brow::Utils.symbolize_keys(options)
       @on_error = options[:on_error] || DEFAULT_ON_ERROR
       @transport = options.fetch(:transport) { Transport.new(options) }
-      @logger = options.fetch(:logger) { Brow.logger }
       @batch = options.fetch(:batch) { MessageBatch.new(max_size: options[:batch_size]) }
     end
 

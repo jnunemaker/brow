@@ -88,7 +88,7 @@ module Brow
 
         true
       else
-        @logger.warn 'Queue is full, dropping events. The :max_queue_size configuration parameter can be increased to prevent this from happening.'
+        @logger.warn("[brow]") { 'Queue is full, dropping events. The :max_queue_size configuration parameter can be increased to prevent this from happening.' }
         false
       end
     end

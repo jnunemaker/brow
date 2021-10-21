@@ -9,24 +9,20 @@ class BrowWorkerTest < Minitest::Test
     assert_equal "https://foo.com/bar", transport.url
     assert_instance_of Brow::MessageBatch, worker.instance_variable_get("@batch")
     assert_equal 100, worker.instance_variable_get("@batch").instance_variable_get("@max_size")
-    assert_equal Brow.logger, worker.instance_variable_get("@logger")
   end
 
   def test_initialize_with_options
     queue = Queue.new
     on_error = ->(*) { }
     transport = NoopTransport.new
-    logger = Logger.new(STDOUT)
     batch = Brow::MessageBatch.new
     worker = Brow::Worker.new(queue, {
       on_error: on_error,
       transport: transport,
-      logger: logger,
       batch: batch,
     })
     assert_equal on_error, worker.instance_variable_get("@on_error")
     assert_equal transport, worker.instance_variable_get("@transport")
-    assert_equal logger, worker.instance_variable_get("@logger")
     assert_equal batch, worker.instance_variable_get("@batch")
   end
 

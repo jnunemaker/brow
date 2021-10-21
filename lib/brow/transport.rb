@@ -50,19 +50,16 @@ module Brow
     #
     # @return [Response] API response
     def send_batch(batch)
-      @logger.debug("Sending request for #{batch.length} items")
+      @logger.debug("[brow]") { "Sending request for #{batch.length} items" }
 
       last_response, exception = retry_with_backoff(@retries) do
         response = send_request(batch)
-        status_code = response.code.to_i
-        should_retry = should_retry_request?(status_code, response.body)
-        @logger.debug("Response status code: #{status_code}")
-
-        [Response.new(status_code, nil), should_retry]
+        @logger.debug("[brow]") { "Response: status=#{response.code}, body=#{response.body}" }
+        [Response.new(response.code.to_i, nil), retry?(response)]
       end
 
       if exception
-        @logger.error(exception.message)
+        @logger.error("[brow]") { exception.message }
         exception.backtrace.each { |line| @logger.error(line) }
         Response.new(-1, exception.to_s)
       else
@@ -77,18 +74,19 @@ module Brow
 
     private
 
-    def should_retry_request?(status_code, body)
+    def retry?(response)
+      status_code = response.code.to_i
       if status_code >= 500
         # Server error. Retry and log.
-        @logger.info("Server error: status=#{status_code}, body=#{body}")
+        @logger.info("[brow]") { "Server error: status=#{status_code}, body=#{response.body}" }
         true
       elsif status_code == 429
         # Rate limited. Retry and log.
-        @logger.info "Rate limit error: body=#{body}"
+        @logger.info("[brow]") { "Rate limit error: body=#{response.body}" }
         true
       elsif status_code >= 400
         # Client error. Do not retry, but log.
-        @logger.error("Client error: status=#{status_code}, body=#{body}")
+        @logger.error("[brow]") { "Client error: status=#{status_code}, body=#{response.body}" }
         false
       else
         false
@@ -110,13 +108,13 @@ module Brow
         result, should_retry = yield
         return [result, nil] unless should_retry
       rescue StandardError => error
-        @logger.debug "Request error: #{error}"
+        @logger.debug("[brow]") {  "Request error: #{error}" }
         should_retry = true
         caught_exception = error
       end
 
       if should_retry && (retries_remaining > 1)
-        @logger.debug("Retrying request, #{retries_remaining} retries left")
+        @logger.debug("[brow]") { "Retrying request, #{retries_remaining} retries left" }
         sleep(@backoff_policy.next_interval.to_f / 1000)
         retry_with_backoff(retries_remaining - 1, &block)
       else
