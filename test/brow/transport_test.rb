@@ -39,12 +39,9 @@ class BrowTransportTest < Minitest::Test
     assert_equal "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
       transport_headers.fetch("Client-Language-Version")
 
-      assert_equal RUBY_PLATFORM, transport_headers.fetch("Client-Platform")
+    assert_equal RUBY_PLATFORM, transport_headers.fetch("Client-Platform")
     assert_equal RUBY_ENGINE, transport_headers.fetch("Client-Engine")
-
-    refute_nil transport_headers.fetch("Client-Thread")
-    refute_nil transport_headers.fetch("Client-Pid")
-    refute_nil transport_headers.fetch("Client-Hostname")
+    refute_nil transport_headers["Client-Hostname"]
 
     # overwrites default headers if provided
     assert_equal "text/plain", transport_headers.fetch("Accept")

@@ -32,10 +32,7 @@ module Brow
         @uri.path = "/"
       end
 
-      @headers = HEADERS.merge(options[:headers] || {}).merge({
-        "Client-Pid" => Process.pid.to_s,
-        "Client-Thread" => Thread.current.object_id.to_s,
-      })
+      @headers = HEADERS.merge(options[:headers] || {})
       @retries = options[:retries] || RETRIES
 
       @logger = options.fetch(:logger) { Brow.logger }
@@ -86,8 +83,8 @@ module Brow
         @logger.info("Server error: status=#{status_code}, body=#{body}")
         true
       elsif status_code == 429
-        # Rate limited
-        @logger.info "Rate limit error"
+        # Rate limited. Retry and log.
+        @logger.info "Rate limit error: body=#{body}"
         true
       elsif status_code >= 400
         # Client error. Do not retry, but log.
@@ -127,12 +124,15 @@ module Brow
       end
     end
 
-    # Sends a request for the batch, returns [status_code, body]
     def send_request(batch)
-      payload = batch.to_json
-      @http.start unless @http.started? # Maintain a persistent connection
-      request = Net::HTTP::Post.new(@uri.path, @headers)
-      @http.request(request, payload)
+      headers = {
+        "Client-Pid" => Process.pid.to_s,
+        "Client-Thread" => Thread.current.object_id.to_s,
+      }.merge(@headers)
+
+      @http.start unless @http.started?
+      request = Net::HTTP::Post.new(@uri.path, headers)
+      @http.request(request, batch.to_json)
     end
   end
 end
