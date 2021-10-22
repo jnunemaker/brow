@@ -4,8 +4,12 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "brow"
 
 require "minitest/autorun"
-require "webmock/minitest"
 require "minitest/heat"
+
+require "webmock/minitest"
+WebMock.disable_net_connect!(allow_localhost: true)
+
+require_relative "support/fake_server"
 
 # Get rid of log output
 Brow.logger = Logger.new("/dev/null")

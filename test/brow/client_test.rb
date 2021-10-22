@@ -110,6 +110,29 @@ class BrowClientTest < Minitest::Test
     assert_equal 0, @queue.size
   end
 
+  def test_integration
+    begin
+      server = FakeServer.new
+      client = Brow::Client.new({
+        url: "http://localhost:#{server.port}/events",
+        retries: 2,
+      })
+
+      pid = fork {
+        client.record(n: 1)
+        client.flush
+      }
+      Process.waitpid pid, 0
+
+      assert_equal 1, server.requests.size
+      request = server.requests.first
+      assert_equal "/events", request.path
+      assert_equal pid, Integer(request.env.fetch("HTTP_CLIENT_PID"))
+    ensure
+      server.shutdown
+    end
+  end
+
   private
 
   def build_client(options = {})
