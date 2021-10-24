@@ -42,12 +42,12 @@ module Brow
       end
     end
 
-    # Public: Enqueues the event.
+    # Public: Enqueues an event to eventually be transported to backend service.
     #
     # event - The Hash of event data.
     #
     # Returns Boolean of whether the item was added to the queue.
-    def record(event)
+    def push(event)
       raise ArgumentError, "event must be a Hash" unless event.is_a?(Hash)
 
       event = Brow::Utils.symbolize_keys(event)
@@ -61,7 +61,7 @@ module Brow
     end
 
     # Public: For test purposes only. If test: true is passed to #initialize
-    # then all recording of events will go to test queue in memory so they can
+    # then all pushing of events will go to test queue in memory so they can
     # be verified with assertions.
     def test_queue
       unless @test
@@ -76,14 +76,14 @@ module Brow
     # Private: Enqueues the event.
     #
     # Returns Boolean of whether the item was added to the queue.
-    def enqueue(action)
+    def enqueue(item)
       if @test
-        test_queue << action
+        test_queue << item
         return true
       end
 
       if @queue.length < @max_queue_size
-        @queue << action
+        @queue << item
         ensure_worker_running
 
         true

@@ -36,7 +36,7 @@ client = Brow::Client.new({
 })
 
 50.times do |n|
-  client.record({
+  client.push({
     number: n,
     now: Time.now.utc,
   })
