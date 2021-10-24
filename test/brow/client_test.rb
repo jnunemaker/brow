@@ -110,17 +110,71 @@ class BrowClientTest < Minitest::Test
     assert_equal 0, @queue.size
   end
 
-  def test_integration
+  def test_flushes_at_exit
     begin
       server = FakeServer.new
       client = Brow::Client.new({
         url: "http://localhost:#{server.port}/events",
+        shutdown_automatically: true,
         retries: 2,
       })
 
       pid = fork {
         client.push(n: 1)
-        client.flush
+      }
+      Process.waitpid pid, 0
+
+      assert_equal 1, server.requests.size
+      request = server.requests.first
+      assert_equal "/events", request.path
+      assert_equal pid, Integer(request.env.fetch("HTTP_CLIENT_PID"))
+    ensure
+      server.shutdown
+    end
+  end
+
+  def test_flushes_queue_when_forked
+    begin
+      server = FakeServer.new
+      client = Brow::Client.new({
+        url: "http://localhost:#{server.port}/events",
+        shutdown_automatically: true,
+        retries: 2,
+      })
+      client.push(n: 1)
+
+      pid = fork {
+        client.push(n: 2)
+      }
+      Process.waitpid pid, 0
+
+      assert_equal 2, server.requests.size
+
+      request = server.requests.first
+      assert_equal "/events", request.path
+      assert_equal Process.pid, Integer(request.env.fetch("HTTP_CLIENT_PID"))
+
+      request = server.requests.last
+      assert_equal "/events", request.path
+      assert_equal pid, Integer(request.env.fetch("HTTP_CLIENT_PID"))
+    ensure
+      server.shutdown
+    end
+  end
+
+  def test_clears_mutexes_when_forked
+    begin
+      server = FakeServer.new
+      client = Brow::Client.new({
+        url: "http://localhost:#{server.port}/events",
+        retries: 2,
+        shutdown_automatically: true,
+      })
+
+      client.instance_variable_get("@worker_mutex").lock
+
+      pid = fork {
+        client.push(n: 1)
       }
       Process.waitpid pid, 0
 
@@ -136,6 +190,10 @@ class BrowClientTest < Minitest::Test
   private
 
   def build_client(options = {})
-    Brow::Client.new({worker: @worker, queue: @queue}.merge(options))
+    Brow::Client.new({
+      worker: @worker,
+      queue: @queue,
+      shutdown_automatically: false,
+    }.merge(options))
   end
 end

@@ -22,13 +22,17 @@ module Brow
 
       @worker_thread = nil
       @worker_mutex = Mutex.new
+      @pid = Process.pid
       @test = options[:test]
       @max_queue_size = options[:max_queue_size] || MAX_QUEUE_SIZE
       @logger = options.fetch(:logger) { Brow.logger }
       @queue = options.fetch(:queue) { Queue.new }
       @worker = options.fetch(:worker) { Worker.new(@queue, options) }
+      @shutdown_timeout = options.fetch(:shutdown_timeout) { 5 }
 
-      at_exit { @worker_thread && @worker_thread[:should_exit] = true }
+      if options.fetch(:shutdown_automatically, true)
+        at_exit { shutdown }
+      end
     end
 
     # Public: Synchronously waits until the worker has flushed the queue.
@@ -37,8 +41,18 @@ module Brow
     # specifically exit.
     def flush
       while !@queue.empty? || @worker.requesting?
-        ensure_worker_running
+        ensure_threads_alive
         sleep(0.1)
+      end
+    end
+
+    def shutdown
+      if @worker_thread
+        begin
+          @worker_thread.join @shutdown_timeout
+        rescue => error
+          @logger.info("[brow]") { "Error shutting down: #{error.inspect}"}
+        end
       end
     end
 
@@ -47,12 +61,26 @@ module Brow
     # event - The Hash of event data.
     #
     # Returns Boolean of whether the item was added to the queue.
-    def push(event)
-      raise ArgumentError, "event must be a Hash" unless event.is_a?(Hash)
+    def push(item)
+      raise ArgumentError, "item must be a Hash" unless item.is_a?(Hash)
 
-      event = Brow::Utils.symbolize_keys(event)
-      event = Brow::Utils.isoify_dates(event)
-      enqueue event
+      item = Brow::Utils.symbolize_keys(item)
+      item = Brow::Utils.isoify_dates(item)
+
+      if @test
+        test_queue << item
+        return true
+      end
+
+      ensure_threads_alive
+
+      if @queue.length < @max_queue_size
+        @queue << item
+        true
+      else
+        @logger.warn("[brow]") { "Queue is full, dropping events. The :max_queue_size configuration parameter can be increased to prevent this from happening." }
+        false
+      end
     end
 
     # Public: Returns the number of messages in the queue.
@@ -73,34 +101,32 @@ module Brow
 
     private
 
-    # Private: Enqueues the event.
-    #
-    # Returns Boolean of whether the item was added to the queue.
-    def enqueue(item)
-      if @test
-        test_queue << item
-        return true
-      end
+    def forked?
+      @pid != Process.pid
+    end
 
-      if @queue.length < @max_queue_size
-        @queue << item
-        ensure_worker_running
-
-        true
-      else
-        @logger.warn("[brow]") { "Queue is full, dropping events. The :max_queue_size configuration parameter can be increased to prevent this from happening." }
-        false
-      end
+    def ensure_threads_alive
+      reset if forked?
+      ensure_worker_running
     end
 
     def ensure_worker_running
-      return if worker_running?
-      @worker_mutex.synchronize do
+      # If another thread is starting worker thread, then return early so this
+      # thread can enqueue and move on with life.
+      return unless @worker_mutex.try_lock
+
+      begin
         return if worker_running?
-        @worker_thread = Thread.new do
-          @worker.run
-        end
+        @worker_thread = Thread.new { @worker.run }
+      ensure
+        @worker_mutex.unlock
       end
+    end
+
+    def reset
+      @pid = Process.pid
+      @worker_mutex.unlock if @worker_mutex.locked?
+      @queue.clear
     end
 
     def worker_running?
