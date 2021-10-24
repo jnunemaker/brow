@@ -83,6 +83,18 @@ class BrowClientTest < Minitest::Test
     refute client.push(event)
   end
 
+  def test_push_and_shutdown_start_and_stop_worker
+    client = build_client
+
+    assert_nil client.instance_variable_get("@worker_thread")
+    client.push(n: 1)
+    assert_instance_of Thread, client.instance_variable_get("@worker_thread")
+
+    client.shutdown
+    sleep 0.2
+    refute_predicate client.instance_variable_get("@worker_thread"), :alive?
+  end
+
   def test_flush_waits_for_the_queue_to_finish_on_a_flush
     client = build_client(worker: DummyWorker.new(@queue))
     client.push foo: "bar"
