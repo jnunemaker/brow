@@ -43,7 +43,6 @@ client = Brow::Client.new({
 end
 
 # batch of 50 events sent to api url above as json
-client.flush
 ```
 
 ## Development
