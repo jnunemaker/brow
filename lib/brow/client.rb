@@ -51,7 +51,7 @@ module Brow
         begin
           @worker_thread.join @shutdown_timeout
         rescue => error
-          @logger.info("[brow]") { "Error shutting down: #{error.inspect}"}
+          @logger.info("[brow]") { "Error shutting down worker thread: #{error.inspect}"}
         end
       end
     end
