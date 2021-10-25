@@ -12,6 +12,9 @@ module Brow
     # Private: Default # of items that can be in queue before we start dropping data.
     MAX_QUEUE_SIZE = 10_000
 
+    # Private: Default number of seconds to wait to shutdown worker thread.
+    SHUTDOWN_TIMEOUT = 5
+
     # Public: Create a new instance of a client.
     #
     # options - The Hash of options.
@@ -28,7 +31,7 @@ module Brow
       @logger = options.fetch(:logger) { Brow.logger }
       @queue = options.fetch(:queue) { Queue.new }
       @worker = options.fetch(:worker) { Worker.new(@queue, options) }
-      @shutdown_timeout = options.fetch(:shutdown_timeout) { 5 }
+      @shutdown_timeout = options.fetch(:shutdown_timeout) { SHUTDOWN_TIMEOUT }
 
       if options.fetch(:shutdown_automatically, true)
         at_exit { shutdown }
