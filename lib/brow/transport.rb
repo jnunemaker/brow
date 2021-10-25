@@ -10,6 +10,8 @@ require_relative 'backoff_policy'
 module Brow
   class Transport
     RETRIES = 10
+    READ_TIMEOUT = 8
+    OPEN_TIMEOUT = 4
     HEADERS = {
       "Accept" => "application/json",
       "Content-Type" => "application/json",
@@ -42,8 +44,8 @@ module Brow
 
       @http = Net::HTTP.new(@uri.host, @uri.port)
       @http.use_ssl = @uri.scheme == "https"
-      @http.read_timeout = options[:read_timeout] || 8
-      @http.open_timeout = options[:open_timeout] || 4
+      @http.read_timeout = options[:read_timeout] || READ_TIMEOUT
+      @http.open_timeout = options[:open_timeout] || OPEN_TIMEOUT
     end
 
     # Sends a batch of messages to the API
