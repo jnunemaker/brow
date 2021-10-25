@@ -39,7 +39,7 @@ module Brow
 
       @logger = options.fetch(:logger) { Brow.logger }
       @backoff_policy = options.fetch(:backoff_policy) {
-        Brow::BackoffPolicy.new
+        Brow::BackoffPolicy.new(options)
       }
 
       @http = Net::HTTP.new(@uri.host, @uri.port)
