@@ -161,14 +161,11 @@ class BrowClientTest < Minitest::Test
       Process.waitpid pid, 0
 
       assert_equal 2, server.requests.size
-
-      request = server.requests.first
-      assert_equal "/events", request.path
-      assert_equal Process.pid, Integer(request.env.fetch("HTTP_CLIENT_PID"))
-
-      request = server.requests.last
-      assert_equal "/events", request.path
-      assert_equal pid, Integer(request.env.fetch("HTTP_CLIENT_PID"))
+      assert_equal ["/events"], server.requests.map(&:path).uniq
+      pids = server.requests.map { |request|
+        request.env.fetch("HTTP_CLIENT_PID")
+      }.uniq
+      assert_equal 2, pids.size
     ensure
       server.shutdown
     end
