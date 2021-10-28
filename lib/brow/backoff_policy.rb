@@ -6,7 +6,7 @@ module Brow
     MIN_TIMEOUT_MS = 100
 
     # Private: The default maximum timeout between intervals in milliseconds.
-    MAX_TIMEOUT_MS = 10000
+    MAX_TIMEOUT_MS = 10_000
 
     # Private: The value to multiply the current interval with for each
     # retry attempt.
