@@ -16,6 +16,12 @@ Brow.logger = Logger.new("/dev/null")
 
 # A worker that doesn't consume jobs
 class NoopWorker
+  attr_reader :mutex
+
+  def initialize
+    @mutex = Mutex.new
+  end
+
   def shutdown
     # Does nothing
   end

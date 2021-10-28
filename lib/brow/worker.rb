@@ -11,7 +11,7 @@ module Brow
     SHUTDOWN = Object.new
 
     # Private
-    attr_reader :lock, :on_error, :transport, :logger, :batch_size
+    attr_reader :mutex, :on_error, :transport, :logger, :batch_size
 
     # Internal: Creates a new worker
     #
@@ -28,7 +28,7 @@ module Brow
     #                   via Transport.
     def initialize(queue, options = {})
       @queue = queue
-      @lock = Mutex.new
+      @mutex = Mutex.new
       options = Brow::Utils.symbolize_keys(options)
       @on_error = options[:on_error] || DEFAULT_ON_ERROR
       @transport = options.fetch(:transport) { Transport.new(options) }

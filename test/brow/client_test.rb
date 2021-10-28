@@ -164,7 +164,7 @@ class BrowClientTest < Minitest::Test
         shutdown_automatically: true,
       })
 
-      client.instance_variable_get("@worker_mutex").lock
+      client.worker.mutex.lock
 
       pid = fork {
         client.push(n: 1)

@@ -67,7 +67,6 @@ module Brow
       options = Brow::Utils.symbolize_keys(options)
 
       @worker_thread = nil
-      @worker_mutex = Mutex.new
       @pid = Process.pid
       @test = options[:test]
       @max_queue_size = options[:max_queue_size] || MAX_QUEUE_SIZE
@@ -154,20 +153,20 @@ module Brow
     def ensure_worker_running
       # If another thread is starting worker thread, then return early so this
       # thread can enqueue and move on with life.
-      return unless @worker_mutex.try_lock
+      return unless worker.mutex.try_lock
 
       begin
         return if worker_running?
         @worker_thread = Thread.new { worker.run }
         @logger.debug("[brow]") { "Worker thread [#{@worker_thread.object_id}] started" }
       ensure
-        @worker_mutex.unlock
+        @worker.mutex.unlock
       end
     end
 
     def reset
       @pid = Process.pid
-      @worker_mutex.unlock if @worker_mutex.locked?
+      @worker.mutex.unlock if @worker.mutex.locked?
       @queue.clear
     end
 
