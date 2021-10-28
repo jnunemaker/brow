@@ -22,6 +22,11 @@ class NoopWorker
     @mutex = Mutex.new
   end
 
+  def push(*)
+    # Does nothing
+    true
+  end
+
   def shutdown
     # Does nothing
   end

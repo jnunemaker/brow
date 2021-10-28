@@ -3,36 +3,27 @@ require "test_helper"
 class BrowClientTest < Minitest::Test
   def setup
     @queue = Queue.new
-    @worker = NoopWorker.new
   end
 
   def test_initialize
     client = build_client
 
-    assert_nil client.test
-    assert_equal 10_000, client.max_queue_size
     assert_equal Brow.logger, client.logger
-    assert_equal @queue, client.queue
-    assert_equal @worker, client.worker
+    assert_instance_of Brow::Worker, client.worker
   end
 
   def test_initialize_with_options
     queue = Queue.new
-    worker = NoopWorker.new
     logger = Logger.new(STDOUT)
     client = build_client({
-      test: true,
       max_queue_size: 10,
-      worker: worker,
       logger: logger,
       queue: queue,
     })
 
-    assert client.test
-    assert_equal 10, client.max_queue_size
-    assert_equal worker, client.worker
+    assert_equal 10, client.worker.max_queue_size
+    assert_equal queue, client.worker.queue
     assert_equal logger, client.logger
-    assert_equal queue, client.queue
   end
 
   def test_push
@@ -83,25 +74,17 @@ class BrowClientTest < Minitest::Test
     refute client.push(event)
   end
 
-  def test_push_and_shutdown_start_and_stop_worker
-    client = build_client
+  # def test_push
+  #   client = build_client
 
-    assert_nil client.instance_variable_get("@worker_thread")
-    client.push(n: 1)
-    assert_instance_of Thread, client.instance_variable_get("@worker_thread")
+  #   assert_nil client.instance_variable_get("@worker_thread")
+  #   client.push(n: 1)
+  #   assert_instance_of Thread, client.instance_variable_get("@worker_thread")
 
-    client.shutdown
-    sleep 0.2
-    refute_predicate client.instance_variable_get("@worker_thread"), :alive?
-  end
-
-  def test_test_mode
-    event = {foo: "bar"}
-    client = build_client(test: true)
-    5.times { assert client.push(event) }
-    assert_equal 5, client.test_queue.size
-    assert_equal 0, @queue.size
-  end
+  #   client.shutdown
+  #   sleep 0.2
+  #   refute_predicate client.instance_variable_get("@worker_thread"), :alive?
+  # end
 
   def test_shutdown_at_exit
     begin
@@ -137,8 +120,8 @@ class BrowClientTest < Minitest::Test
       pid = fork { client.push(n: 2) }
       Process.waitpid pid, 0
 
-      # gotta shutdown the parent
-      client.shutdown
+      # gotta shutdown the parent process worker
+      client.worker.stop
 
       messages = server.requests.map(&:body).map(&:string).map { |text|
         JSON.parse(text).fetch("messages")
@@ -184,7 +167,7 @@ class BrowClientTest < Minitest::Test
 
   def build_client(options = {})
     Brow::Client.new({
-      worker: @worker,
+      url: "http://example.com",
       queue: @queue,
       shutdown_automatically: false,
     }.merge(options))
