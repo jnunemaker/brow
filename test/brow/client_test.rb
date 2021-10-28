@@ -95,25 +95,6 @@ class BrowClientTest < Minitest::Test
     refute_predicate client.instance_variable_get("@worker_thread"), :alive?
   end
 
-  def test_flush_waits_for_the_queue_to_finish_on_a_flush
-    client = build_client(worker: DummyWorker.new(@queue))
-    client.push foo: "bar"
-    client.push foo: "bar"
-    client.flush
-    assert_equal 0, client.queued_messages
-  end
-
-  def test_flush_completes_when_the_process_forks
-    client = build_client(worker: DummyWorker.new(@queue))
-    client.push foo: "bar"
-    Process.fork do
-      client.push foo: "bar"
-      client.flush
-      assert_equal 0, client.queued_messages
-    end
-    Process.wait
-  end
-
   def test_test_mode
     event = {foo: "bar"}
     client = build_client(test: true)
@@ -122,7 +103,7 @@ class BrowClientTest < Minitest::Test
     assert_equal 0, @queue.size
   end
 
-  def test_flushes_at_exit
+  def test_shutdown_at_exit
     begin
       server = FakeServer.new
       client = Brow::Client.new({
@@ -131,9 +112,7 @@ class BrowClientTest < Minitest::Test
         retries: 2,
       })
 
-      pid = fork {
-        client.push(n: 1)
-      }
+      pid = fork { client.push(n: 1) }
       Process.waitpid pid, 0
 
       assert_equal 1, server.requests.size
@@ -145,7 +124,7 @@ class BrowClientTest < Minitest::Test
     end
   end
 
-  def test_flushes_queue_when_forked
+  def test_processes_queue_when_forked
     begin
       server = FakeServer.new
       client = Brow::Client.new({
@@ -155,17 +134,22 @@ class BrowClientTest < Minitest::Test
       })
       client.push(n: 1)
 
-      pid = fork {
-        client.push(n: 2)
-      }
+      pid = fork { client.push(n: 2) }
       Process.waitpid pid, 0
 
-      assert_equal 2, server.requests.size
+      # gotta shutdown the parent
+      client.shutdown
+
+      messages = server.requests.map(&:body).map(&:string).map { |text|
+        JSON.parse(text).fetch("messages")
+      }.flatten
+
+      assert_equal [1, 2], messages.map { |message| message["n"] }.sort
       assert_equal ["/events"], server.requests.map(&:path).uniq
       pids = server.requests.map { |request|
         request.env.fetch("HTTP_CLIENT_PID")
-      }.uniq
-      assert_equal 2, pids.size
+      }
+      assert_equal 2, pids.uniq.size
     ensure
       server.shutdown
     end

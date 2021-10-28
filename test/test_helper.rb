@@ -16,6 +16,10 @@ Brow.logger = Logger.new("/dev/null")
 
 # A worker that doesn't consume jobs
 class NoopWorker
+  def shutdown
+    # Does nothing
+  end
+
   def run
     # Does nothing
   end

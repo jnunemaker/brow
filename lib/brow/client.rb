@@ -78,23 +78,18 @@ module Brow
       end
     end
 
-    # Public: Synchronously waits until the worker has flushed the queue.
-    #
-    # Use only for scripts which are not long-running, and will
-    # specifically exit.
-    def flush
-      while !@queue.empty? || @worker.requesting?
-        ensure_threads_alive
-        sleep(0.1)
-      end
-    end
-
     def shutdown
+      @worker.shutdown
+
       if @worker_thread
         begin
-          @worker_thread.join @shutdown_timeout
+          if @worker_thread.join(@shutdown_timeout)
+            @logger.info("[brow]") { "Worker thread [#{@worker_thread.object_id}] joined sucessfully" }
+          else
+            @logger.info("[brow]") { "Worker thread [#{@worker_thread.object_id}] did not join successfully" }
+          end
         rescue => error
-          @logger.info("[brow]") { "Error shutting down worker thread: #{error.inspect}"}
+          @logger.info("[brow]") { "Worker thread [#{@worker_thread.object_id}] error shutting down: #{error.inspect}" }
         end
       end
     end
@@ -161,6 +156,7 @@ module Brow
       begin
         return if worker_running?
         @worker_thread = Thread.new { @worker.run }
+        @logger.debug("[brow]") { "Worker thread [#{@worker_thread.object_id}] started" }
       ensure
         @worker_mutex.unlock
       end

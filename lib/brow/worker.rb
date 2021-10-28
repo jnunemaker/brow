@@ -8,6 +8,7 @@ module Brow
   # Internal: The Worker to pull items off the queue and put them
   class Worker
     DEFAULT_ON_ERROR = proc { |response| }
+    SHUTDOWN = Object.new
 
     # Internal: Creates a new worker
     #
@@ -28,38 +29,49 @@ module Brow
       options = Brow::Utils.symbolize_keys(options)
       @on_error = options[:on_error] || DEFAULT_ON_ERROR
       @transport = options.fetch(:transport) { Transport.new(options) }
-      @batch = options.fetch(:batch) { MessageBatch.new(max_size: options[:batch_size]) }
+      @logger = options.fetch(:logger) { Brow.logger }
+      @batch_size = options[:batch_size]
+    end
+
+    def shutdown
+      @queue << SHUTDOWN
     end
 
     # Internal: Continuously runs the loop to check for new events
     def run
-      until Thread.current[:should_exit]
-        return if @queue.empty?
+      batch = MessageBatch.new(max_size: @batch_size)
 
-        @lock.synchronize do
-          consume_message_from_queue! until @batch.full? || @queue.empty?
+      loop do
+        message = @queue.pop
+
+        case message
+        when SHUTDOWN
+          send_batch(batch) unless batch.empty?
+          break
+        else
+          begin
+            batch << message
+          rescue MessageBatch::JSONGenerationError => error
+            @on_error.call(Response.new(-1, error))
+          end
+
+          send_batch(batch) if batch.full?
         end
-
-        response = @transport.send_batch @batch
-        @on_error.call(response) unless response.status == 200
-
-        @lock.synchronize { @batch.clear }
       end
     ensure
       @transport.shutdown
     end
 
-    # Internal: Check whether we have outstanding requests.
-    def requesting?
-      @lock.synchronize { !@batch.empty? }
-    end
-
     private
 
-    def consume_message_from_queue!
-      @batch << @queue.pop
-    rescue MessageBatch::JSONGenerationError => error
-      @on_error.call(Response.new(-1, error))
+    def send_batch(batch)
+      response = @transport.send_batch(batch)
+
+      unless response.status == 200
+        @on_error.call(response)
+      end
+
+      response
     end
   end
 end

@@ -22,6 +22,8 @@ module Brow
 
     def_delegators :@messages, :empty?
     def_delegators :@messages, :length
+    def_delegators :@messages, :size
+    def_delegators :@messages, :count
 
     attr_reader :uuid, :json_size
 

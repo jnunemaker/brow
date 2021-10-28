@@ -67,10 +67,13 @@ module Brow
       else
         last_response
       end
+    ensure
+      batch.clear
     end
 
     # Closes a persistent connection if it exists
     def shutdown
+      @logger.info("[brow]") { "Transport shutting down" }
       @http.finish if @http.started?
     end
 
