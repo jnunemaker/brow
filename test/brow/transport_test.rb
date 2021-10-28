@@ -31,7 +31,7 @@ class BrowTransportTest < Minitest::Test
       logger: logger,
       backoff_policy: backoff_policy,
     })
-    transport_headers = transport.instance_variable_get("@headers")
+    transport_headers = transport.headers
 
     # includes defaults that weren't overwritten
     assert_equal "brow-ruby/#{Brow::VERSION}", transport_headers.fetch("User-Agent")
@@ -50,9 +50,9 @@ class BrowTransportTest < Minitest::Test
     # adds new headers
     assert_equal "asdf", transport_headers.fetch("Some-Token")
 
-    assert_equal logger, transport.instance_variable_get("@logger")
-    assert_equal backoff_policy, transport.instance_variable_get("@backoff_policy")
-    http = transport.instance_variable_get("@http")
+    assert_equal logger, transport.logger
+    assert_equal backoff_policy, transport.backoff_policy
+    http = transport.http
     assert_predicate http, :use_ssl?
   end
 

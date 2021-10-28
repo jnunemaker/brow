@@ -4,10 +4,10 @@ class BrowWorkerTest < Minitest::Test
   def test_initialize
     queue = Queue.new
     worker = Brow::Worker.new(queue, url: "https://foo.com/bar")
-    transport = worker.instance_variable_get("@transport")
+    transport = worker.transport
     assert_instance_of Brow::Transport, transport
     assert_equal "https://foo.com/bar", transport.url
-    assert_nil worker.instance_variable_get("@batch_size")
+    assert_nil worker.batch_size
   end
 
   def test_initialize_with_options
@@ -19,9 +19,9 @@ class BrowWorkerTest < Minitest::Test
       transport: transport,
       batch_size: 10,
     })
-    assert_equal on_error, worker.instance_variable_get("@on_error")
-    assert_equal transport, worker.instance_variable_get("@transport")
-    assert_equal 10, worker.instance_variable_get("@batch_size")
+    assert_equal on_error, worker.on_error
+    assert_equal transport, worker.transport
+    assert_equal 10, worker.batch_size
   end
 
   def test_initialize_with_transport_options
@@ -32,11 +32,11 @@ class BrowWorkerTest < Minitest::Test
       read_timeout: 1,
       open_timeout: 2,
     })
-    transport = worker.instance_variable_get("@transport")
+    transport = worker.transport
     assert_equal "https://foo.com/bar", transport.url
-    assert_equal 5, transport.instance_variable_get("@retries")
+    assert_equal 5, transport.retries
 
-    http = transport.instance_variable_get("@http")
+    http = transport.http
     assert_equal 1, http.read_timeout
     assert_equal 2, http.open_timeout
   end

@@ -16,6 +16,12 @@ module Brow
     # retry interval.
     RANDOMIZATION_FACTOR = 0.5
 
+    # Private
+    attr_reader :min_timeout_ms, :max_timeout_ms, :multiplier, :randomization_factor
+
+    # Private
+    attr_reader :attempts
+
     # Public: Create new instance of backoff policy.
     #
     # options - The Hash of options.

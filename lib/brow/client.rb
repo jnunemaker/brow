@@ -15,6 +15,9 @@ module Brow
     # Private: Default number of seconds to wait to shutdown worker thread.
     SHUTDOWN_TIMEOUT = 5
 
+    # Private
+    attr_reader :pid, :test, :max_queue_size, :logger, :queue, :worker, :shutdown_timeout
+
     # Public: Create a new instance of a client.
     #
     # options - The Hash of options.
@@ -70,7 +73,7 @@ module Brow
       @max_queue_size = options[:max_queue_size] || MAX_QUEUE_SIZE
       @logger = options.fetch(:logger) { Brow.logger }
       @queue = options.fetch(:queue) { Queue.new }
-      @worker = options.fetch(:worker) { Worker.new(@queue, options) }
+      @worker = options.fetch(:worker) { Worker.new(queue, options) }
       @shutdown_timeout = options.fetch(:shutdown_timeout) { SHUTDOWN_TIMEOUT }
 
       if options.fetch(:shutdown_automatically, true)
@@ -79,7 +82,7 @@ module Brow
     end
 
     def shutdown
-      @worker.shutdown
+      worker.shutdown
 
       if @worker_thread
         begin
@@ -155,7 +158,7 @@ module Brow
 
       begin
         return if worker_running?
-        @worker_thread = Thread.new { @worker.run }
+        @worker_thread = Thread.new { worker.run }
         @logger.debug("[brow]") { "Worker thread [#{@worker_thread.object_id}] started" }
       ensure
         @worker_mutex.unlock

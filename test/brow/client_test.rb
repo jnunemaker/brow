@@ -9,11 +9,11 @@ class BrowClientTest < Minitest::Test
   def test_initialize
     client = build_client
 
-    assert_nil client.instance_variable_get("@test")
-    assert_equal 10_000, client.instance_variable_get("@max_queue_size")
-    assert_equal Brow.logger, client.instance_variable_get("@logger")
-    assert_equal @queue, client.instance_variable_get("@queue")
-    assert_equal @worker, client.instance_variable_get("@worker")
+    assert_nil client.test
+    assert_equal 10_000, client.max_queue_size
+    assert_equal Brow.logger, client.logger
+    assert_equal @queue, client.queue
+    assert_equal @worker, client.worker
   end
 
   def test_initialize_with_options
@@ -28,11 +28,11 @@ class BrowClientTest < Minitest::Test
       queue: queue,
     })
 
-    assert client.instance_variable_get("@test")
-    assert_equal 10, client.instance_variable_get("@max_queue_size")
-    assert_equal worker, client.instance_variable_get("@worker")
-    assert_equal logger, client.instance_variable_get("@logger")
-    assert_equal queue, client.instance_variable_get("@queue")
+    assert client.test
+    assert_equal 10, client.max_queue_size
+    assert_equal worker, client.worker
+    assert_equal logger, client.logger
+    assert_equal queue, client.queue
   end
 
   def test_push

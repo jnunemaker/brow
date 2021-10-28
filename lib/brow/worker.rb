@@ -10,6 +10,9 @@ module Brow
     DEFAULT_ON_ERROR = proc { |response| }
     SHUTDOWN = Object.new
 
+    # Private
+    attr_reader :lock, :on_error, :transport, :logger, :batch_size
+
     # Internal: Creates a new worker
     #
     # The worker continuously takes messages off the queue and makes requests to

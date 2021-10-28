@@ -25,6 +25,9 @@ module Brow
 
     attr_reader :url
 
+    # Private
+    attr_reader :headers, :retries, :logger, :backoff_policy, :http
+
     def initialize(options = {})
       @url = options[:url] || raise(ArgumentError, ":url is required to be present so we know where to send batches")
       @uri = URI.parse(@url)
