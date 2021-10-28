@@ -96,6 +96,7 @@ class BrowWorkerTest < Minitest::Test
     on_error = proc { |yielded_response| calls << yielded_response }
 
     queue = Queue.new
+    queue << {"n" => 1}
     worker = Brow::Worker.new({
       queue: queue,
       on_error: on_error,
