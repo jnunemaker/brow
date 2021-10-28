@@ -7,9 +7,6 @@ require_relative 'worker'
 
 module Brow
   class Client
-    # Private
-    attr_reader :logger, :worker
-
     # Public: Create a new instance of a client.
     #
     # options - The Hash of options.
@@ -54,7 +51,6 @@ module Brow
     #   :on_error - The Proc that handles error calls from the API.
     def initialize(options = {})
       options = Brow::Utils.symbolize_keys(options)
-      @logger = options.fetch(:logger) { Brow.logger }
       @worker = options.fetch(:worker) { Worker.new(options) }
     end
 
@@ -64,7 +60,7 @@ module Brow
     #
     # Returns Boolean of whether the data was added to the queue.
     def push(data)
-      worker.push(data)
+      @worker.push(data)
     end
   end
 end
