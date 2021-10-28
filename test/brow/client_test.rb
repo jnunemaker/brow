@@ -21,20 +21,20 @@ class BrowClientTest < Minitest::Test
     assert_equal queue, client.worker.queue
   end
 
-  def test_push
-    event = {foo: "bar"}
+  def test_push_symbol_keys
     client = build_client
-    client.push(event)
+    client.push(foo: "bar")
     item = @queue.pop
-    assert_equal event, item
+    expected = {"foo" => "bar"}
+    assert_equal expected, item
   end
 
   def test_push_string_keys
-    event = {foo: "bar"}
     client = build_client
-    client.push({"foo" => "bar"})
+    client.push("foo" => "bar")
     item = @queue.pop
-    assert_equal event, item
+    expected = {"foo" => "bar"}
+    assert_equal expected, item
   end
 
   def test_push_with_dates_and_times
@@ -47,9 +47,9 @@ class BrowClientTest < Minitest::Test
 
     client.push(event)
     expected = {
-      time: "2013-01-01T01:01:02.000023Z",
-      date_time: "2013-01-01T01:01:10.000000+00:00",
-      date: "2013-01-01",
+      "time" => "2013-01-01T01:01:02.000023Z",
+      "date_time" => "2013-01-01T01:01:10.000000+00:00",
+      "date" => "2013-01-01",
     }
     item = @queue.pop
     assert_equal expected, item

@@ -16,7 +16,7 @@ module Brow
     # Internal: Return a new hash with keys converted to strings
     def stringify_keys(hash)
       hash.each_with_object({}) do |(k, v), memo|
-        memo[k.to_str] = v
+        memo[k.to_s] = v
       end
     end
 
