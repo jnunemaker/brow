@@ -46,6 +46,7 @@ class BrowTransportTest < Minitest::Test
     response = transport.send_batch(@batch)
     assert_equal 201, response.status
     assert_nil response.error
+    assert_equal 0, transport.backoff_policy.attempts
 
     assert_requested :post, "https://foo.com/"
   end
@@ -66,6 +67,7 @@ class BrowTransportTest < Minitest::Test
     response = transport.send_batch(@batch)
     assert_equal 201, response.status
     assert_nil response.error
+    assert_equal 0, transport.backoff_policy.attempts
 
     assert_requested :post, "https://foo.com/bar"
   end
@@ -87,6 +89,7 @@ class BrowTransportTest < Minitest::Test
       assert_equal error_status_code, response.status
       assert_equal 2, attempts
       assert_nil response.error
+      assert_equal 0, transport.backoff_policy.attempts
     end
   end
 
@@ -100,6 +103,7 @@ class BrowTransportTest < Minitest::Test
     response = transport.send_batch(@batch)
     assert_equal (-1), response.status
     assert_equal "execution expired", response.error
+    assert_equal 0, transport.backoff_policy.attempts
   end
 
   def test_send_batch_temporary_error
@@ -119,6 +123,7 @@ class BrowTransportTest < Minitest::Test
       assert_equal 201, response.status
       assert_equal 2, attempts
       assert_nil response.error
+      assert_equal 0, transport.backoff_policy.attempts
     end
   end
 
@@ -138,6 +143,7 @@ class BrowTransportTest < Minitest::Test
     assert_equal 201, response.status
     assert_equal 2, attempts
     assert_nil response.error
+    assert_equal 0, transport.backoff_policy.attempts
   end
 
   def test_send_batch_client_error
@@ -157,6 +163,7 @@ class BrowTransportTest < Minitest::Test
       assert_equal error_status_code, response.status
       assert_equal 1, attempts # no retry
       assert_nil response.error
+      assert_equal 0, transport.backoff_policy.attempts
     end
   end
 
@@ -176,5 +183,6 @@ class BrowTransportTest < Minitest::Test
     assert_equal 201, response.status
     assert_equal 1, attempts
     assert_nil response.error
+    assert_equal 0, transport.backoff_policy.attempts
   end
 end

@@ -50,6 +50,10 @@ module Brow
       [interval, @max_timeout_ms].min
     end
 
+    def reset
+      @attempts = 0
+    end
+
     private
 
     def add_jitter(base, randomization_factor)
