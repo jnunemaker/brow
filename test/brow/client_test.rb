@@ -7,23 +7,18 @@ class BrowClientTest < Minitest::Test
 
   def test_initialize
     client = build_client
-
-    assert_equal Brow.logger, client.logger
     assert_instance_of Brow::Worker, client.worker
   end
 
   def test_initialize_with_options
     queue = Queue.new
-    logger = Logger.new(STDOUT)
     client = build_client({
       max_queue_size: 10,
-      logger: logger,
       queue: queue,
     })
 
     assert_equal 10, client.worker.max_queue_size
     assert_equal queue, client.worker.queue
-    assert_equal logger, client.logger
   end
 
   def test_push
@@ -102,6 +97,15 @@ class BrowClientTest < Minitest::Test
       request = server.requests.first
       assert_equal "/events", request.path
       assert_equal pid, Integer(request.env.fetch("HTTP_CLIENT_PID"))
+
+      assert_equal "brow-ruby/#{Brow::VERSION}", request.env.fetch("HTTP_USER_AGENT")
+      assert_equal "ruby", request.env.fetch("HTTP_CLIENT_LANGUAGE")
+      assert_equal "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
+        request.env.fetch("HTTP_CLIENT_LANGUAGE_VERSION")
+
+      assert_equal RUBY_PLATFORM, request.env.fetch("HTTP_CLIENT_PLATFORM")
+      assert_equal RUBY_ENGINE, request.env.fetch("HTTP_CLIENT_ENGINE")
+      refute_nil request.env["HTTP_CLIENT_HOSTNAME"]
     ensure
       server.shutdown
     end

@@ -9,24 +9,17 @@ require_relative 'backoff_policy'
 
 module Brow
   class Transport
+    # Private: Default number of times to retry request.
     RETRIES = 10
-    READ_TIMEOUT = 8
-    OPEN_TIMEOUT = 4
-    HEADERS = {
-      "Accept" => "application/json",
-      "Content-Type" => "application/json",
-      "User-Agent" => "brow-ruby/#{Brow::VERSION}",
-      "Client-Language" => "ruby",
-      "Client-Language-Version" => "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
-      "Client-Platform" => RUBY_PLATFORM,
-      "Client-Engine" => defined?(RUBY_ENGINE) ? RUBY_ENGINE : "",
-      "Client-Hostname" => Socket.gethostname,
-    }
 
-    attr_reader :url
+    # Private: Default read timeout on requests.
+    READ_TIMEOUT = 8
+
+    # Private: Default open timeout on requests.
+    OPEN_TIMEOUT = 4
 
     # Private
-    attr_reader :headers, :retries, :logger, :backoff_policy, :http
+    attr_reader :url, :headers, :retries, :logger, :backoff_policy, :http
 
     def initialize(options = {})
       @url = options[:url] || raise(ArgumentError, ":url is required to be present so we know where to send batches")
@@ -37,7 +30,7 @@ module Brow
         @uri.path = "/"
       end
 
-      @headers = HEADERS.merge(options[:headers] || {})
+      @headers = options[:headers] || {}
       @retries = options[:retries] || RETRIES
 
       @logger = options.fetch(:logger) { Brow.logger }
@@ -132,6 +125,14 @@ module Brow
 
     def send_request(batch)
       headers = {
+        "Accept" => "application/json",
+        "Content-Type" => "application/json",
+        "User-Agent" => "brow-ruby/#{Brow::VERSION}",
+        "Client-Language" => "ruby",
+        "Client-Language-Version" => "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
+        "Client-Platform" => RUBY_PLATFORM,
+        "Client-Engine" => defined?(RUBY_ENGINE) ? RUBY_ENGINE : "",
+        "Client-Hostname" => Socket.gethostname,
         "Client-Pid" => Process.pid.to_s,
         "Client-Thread" => Thread.current.object_id.to_s,
       }.merge(@headers)

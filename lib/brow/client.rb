@@ -54,13 +54,16 @@ module Brow
       @worker = options.fetch(:worker) { Worker.new(options) }
     end
 
+    # Private
+    attr_reader :worker
+
     # Public: Enqueues an event to eventually be transported to backend service.
     #
     # data - The Hash of data.
     #
     # Returns Boolean of whether the data was added to the queue.
     def push(data)
-      @worker.push(data)
+      worker.push(data)
     end
   end
 end

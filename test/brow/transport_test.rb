@@ -31,25 +31,8 @@ class BrowTransportTest < Minitest::Test
       logger: logger,
       backoff_policy: backoff_policy,
     })
-    transport_headers = transport.headers
 
-    # includes defaults that weren't overwritten
-    assert_equal "brow-ruby/#{Brow::VERSION}", transport_headers.fetch("User-Agent")
-    assert_equal "ruby", transport_headers.fetch("Client-Language")
-    assert_equal "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
-      transport_headers.fetch("Client-Language-Version")
-
-    assert_equal RUBY_PLATFORM, transport_headers.fetch("Client-Platform")
-    assert_equal RUBY_ENGINE, transport_headers.fetch("Client-Engine")
-    refute_nil transport_headers["Client-Hostname"]
-
-    # overwrites default headers if provided
-    assert_equal "text/plain", transport_headers.fetch("Accept")
-    assert_equal "text/plain", transport_headers.fetch("Content-Type")
-
-    # adds new headers
-    assert_equal "asdf", transport_headers.fetch("Some-Token")
-
+    assert_equal headers, transport.headers
     assert_equal logger, transport.logger
     assert_equal backoff_policy, transport.backoff_policy
     http = transport.http
