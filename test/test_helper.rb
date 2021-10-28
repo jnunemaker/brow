@@ -3,58 +3,23 @@ require "pathname"
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "brow"
 
-require "minitest/autorun"
+require "maxitest/autorun"
+require "maxitest/timeout"
+require "maxitest/threads"
 require "minitest/heat"
-
 require "webmock/minitest"
-WebMock.disable_net_connect!(allow_localhost: true)
-
 require_relative "support/fake_server"
+
+# Timeout tests that get stuck in worker loop or that take too long.
+Maxitest.timeout = 5
+
+# Setup webmock to allow localhost so we can hit the fake test server.
+WebMock.disable_net_connect!(allow_localhost: true)
 
 # Get rid of log output
 Brow.logger = Logger.new("/dev/null")
 
-# A worker that doesn't consume jobs
-class NoopWorker
-  attr_reader :mutex
-
-  def initialize
-    @mutex = Mutex.new
-  end
-
-  def push(*)
-    # Does nothing
-    true
-  end
-
-  def shutdown
-    # Does nothing
-  end
-
-  def run
-    # Does nothing
-  end
-
-  def requesting?
-    false
-  end
-end
-
-# A worker that consumes all jobs
-class DummyWorker
-  def initialize(queue)
-    @queue = queue
-  end
-
-  def run
-    @queue.pop until @queue.empty?
-  end
-
-  def requesting?
-    false
-  end
-end
-
+# Fake transport that does nothing but succeed.
 class NoopTransport
   def send_batch(*)
     Brow::Response.new(200, "Success")
