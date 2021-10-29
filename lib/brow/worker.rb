@@ -13,7 +13,7 @@ module Brow
     DEFAULT_ON_ERROR = proc { |response| }
 
     # Private: Object to enqueue to signal shutdown for worker.
-    SHUTDOWN = Object.new
+    SHUTDOWN = :__ಠ_ಠ__
 
     # Private: Default number of seconds to wait to shutdown worker thread.
     SHUTDOWN_TIMEOUT = 5
