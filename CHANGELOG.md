@@ -1,8 +1,24 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.3.0] - 2021-10-29
+
+https://github.com/jnunemaker/brow/pull/4
+
+### Fixed
+
+- Fixed thread churn. Upon digging in, I realized that the previous code was creating a bunch of threads. Basically one for each batch, which seems far from ideal. I'm surprised it worked that way. This changes it to be one worker thread that just sits there forever in a loop. When a batch is full, it transports it. When shutdown happens, a shutdown message is enqueued and the worker breaks the loop.
+- Moved worker thread management to `Worker` from `Client`.
+- Back off policy is now reset after `Transport#send_batch` completes. Previously it wasn't, which meant the next interval would get to the max and stay there.
+
+### Changed
+
+- Switched to stringify data keys instead of symbolize. Old versions of ruby didn't gc symbols so that was a memory leak. Might be fixed now, but strings are fine here so lets roll with them.
+- Removed test mode and test queue. I didn't like this implementation and neither did @bkeepers. We'll come up with something new and better soon like Brow::Clients::Memory.new or something.
 
 ## [0.2.0] - 2021-10-25
 
