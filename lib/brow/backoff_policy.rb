@@ -6,7 +6,7 @@ module Brow
     MIN_TIMEOUT_MS = 100
 
     # Private: The default maximum timeout between intervals in milliseconds.
-    MAX_TIMEOUT_MS = 10000
+    MAX_TIMEOUT_MS = 10_000
 
     # Private: The value to multiply the current interval with for each
     # retry attempt.
@@ -15,6 +15,12 @@ module Brow
     # Private: The randomization factor to use to create a range around the
     # retry interval.
     RANDOMIZATION_FACTOR = 0.5
+
+    # Private
+    attr_reader :min_timeout_ms, :max_timeout_ms, :multiplier, :randomization_factor
+
+    # Private
+    attr_reader :attempts
 
     # Public: Create new instance of backoff policy.
     #
@@ -42,6 +48,10 @@ module Brow
       @attempts += 1
 
       [interval, @max_timeout_ms].min
+    end
+
+    def reset
+      @attempts = 0
     end
 
     private

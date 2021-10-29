@@ -13,6 +13,13 @@ module Brow
       end
     end
 
+    # Internal: Return a new hash with keys converted to strings
+    def stringify_keys(hash)
+      hash.each_with_object({}) do |(k, v), memo|
+        memo[k.to_s] = v
+      end
+    end
+
     # Internal: Returns a new hash with all the date values in the into
     # iso8601 strings
     def isoify_dates(hash)

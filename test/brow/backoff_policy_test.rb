@@ -5,10 +5,10 @@ require "test_helper"
 class BrowBackoffPolicyTest < Minitest::Test
   def test_initialize_with_no_options
     policy = Brow::BackoffPolicy.new
-    assert_equal policy.instance_variable_get("@min_timeout_ms"), 100
-    assert_equal policy.instance_variable_get("@max_timeout_ms"), 10_000
-    assert_equal policy.instance_variable_get("@multiplier"), 1.5
-    assert_equal policy.instance_variable_get("@randomization_factor"), 0.5
+    assert_equal policy.min_timeout_ms, 100
+    assert_equal policy.max_timeout_ms, 10_000
+    assert_equal policy.multiplier, 1.5
+    assert_equal policy.randomization_factor, 0.5
   end
 
   def test_initialize_with_options
@@ -18,10 +18,10 @@ class BrowBackoffPolicyTest < Minitest::Test
       multiplier: 24,
       randomization_factor: 0.4,
     })
-    assert_equal policy.instance_variable_get("@min_timeout_ms"), 1234
-    assert_equal policy.instance_variable_get("@max_timeout_ms"), 5678
-    assert_equal policy.instance_variable_get("@multiplier"), 24
-    assert_equal policy.instance_variable_get("@randomization_factor"), 0.4
+    assert_equal policy.min_timeout_ms, 1234
+    assert_equal policy.max_timeout_ms, 5678
+    assert_equal policy.multiplier, 24
+    assert_equal policy.randomization_factor, 0.4
   end
 
   def test_next_interval
@@ -47,5 +47,19 @@ class BrowBackoffPolicyTest < Minitest::Test
     })
     10.times { policy.next_interval }
     assert_equal 10_000, policy.next_interval
+  end
+
+  def test_reset
+    policy = Brow::BackoffPolicy.new({
+      min_timeout_ms: 1_000,
+      max_timeout_ms: 10_000,
+      multiplier: 2,
+      randomization_factor: 0.5,
+    })
+    10.times { policy.next_interval }
+
+    assert_equal 10, policy.attempts
+    policy.reset
+    assert_equal 0, policy.attempts
   end
 end

@@ -31,28 +31,11 @@ class BrowTransportTest < Minitest::Test
       logger: logger,
       backoff_policy: backoff_policy,
     })
-    transport_headers = transport.instance_variable_get("@headers")
 
-    # includes defaults that weren't overwritten
-    assert_equal "brow-ruby/#{Brow::VERSION}", transport_headers.fetch("User-Agent")
-    assert_equal "ruby", transport_headers.fetch("Client-Language")
-    assert_equal "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
-      transport_headers.fetch("Client-Language-Version")
-
-    assert_equal RUBY_PLATFORM, transport_headers.fetch("Client-Platform")
-    assert_equal RUBY_ENGINE, transport_headers.fetch("Client-Engine")
-    refute_nil transport_headers["Client-Hostname"]
-
-    # overwrites default headers if provided
-    assert_equal "text/plain", transport_headers.fetch("Accept")
-    assert_equal "text/plain", transport_headers.fetch("Content-Type")
-
-    # adds new headers
-    assert_equal "asdf", transport_headers.fetch("Some-Token")
-
-    assert_equal logger, transport.instance_variable_get("@logger")
-    assert_equal backoff_policy, transport.instance_variable_get("@backoff_policy")
-    http = transport.instance_variable_get("@http")
+    assert_equal headers, transport.headers
+    assert_equal logger, transport.logger
+    assert_equal backoff_policy, transport.backoff_policy
+    http = transport.http
     assert_predicate http, :use_ssl?
   end
 
@@ -63,6 +46,7 @@ class BrowTransportTest < Minitest::Test
     response = transport.send_batch(@batch)
     assert_equal 201, response.status
     assert_nil response.error
+    assert_equal 0, transport.backoff_policy.attempts
 
     assert_requested :post, "https://foo.com/"
   end
@@ -83,6 +67,7 @@ class BrowTransportTest < Minitest::Test
     response = transport.send_batch(@batch)
     assert_equal 201, response.status
     assert_nil response.error
+    assert_equal 0, transport.backoff_policy.attempts
 
     assert_requested :post, "https://foo.com/bar"
   end
@@ -104,6 +89,7 @@ class BrowTransportTest < Minitest::Test
       assert_equal error_status_code, response.status
       assert_equal 2, attempts
       assert_nil response.error
+      assert_equal 0, transport.backoff_policy.attempts
     end
   end
 
@@ -117,6 +103,7 @@ class BrowTransportTest < Minitest::Test
     response = transport.send_batch(@batch)
     assert_equal (-1), response.status
     assert_equal "execution expired", response.error
+    assert_equal 0, transport.backoff_policy.attempts
   end
 
   def test_send_batch_temporary_error
@@ -136,6 +123,7 @@ class BrowTransportTest < Minitest::Test
       assert_equal 201, response.status
       assert_equal 2, attempts
       assert_nil response.error
+      assert_equal 0, transport.backoff_policy.attempts
     end
   end
 
@@ -155,6 +143,7 @@ class BrowTransportTest < Minitest::Test
     assert_equal 201, response.status
     assert_equal 2, attempts
     assert_nil response.error
+    assert_equal 0, transport.backoff_policy.attempts
   end
 
   def test_send_batch_client_error
@@ -174,6 +163,7 @@ class BrowTransportTest < Minitest::Test
       assert_equal error_status_code, response.status
       assert_equal 1, attempts # no retry
       assert_nil response.error
+      assert_equal 0, transport.backoff_policy.attempts
     end
   end
 
@@ -193,5 +183,6 @@ class BrowTransportTest < Minitest::Test
     assert_equal 201, response.status
     assert_equal 1, attempts
     assert_nil response.error
+    assert_equal 0, transport.backoff_policy.attempts
   end
 end

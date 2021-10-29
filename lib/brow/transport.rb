@@ -9,21 +9,17 @@ require_relative 'backoff_policy'
 
 module Brow
   class Transport
+    # Private: Default number of times to retry request.
     RETRIES = 10
-    READ_TIMEOUT = 8
-    OPEN_TIMEOUT = 4
-    HEADERS = {
-      "Accept" => "application/json",
-      "Content-Type" => "application/json",
-      "User-Agent" => "brow-ruby/#{Brow::VERSION}",
-      "Client-Language" => "ruby",
-      "Client-Language-Version" => "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
-      "Client-Platform" => RUBY_PLATFORM,
-      "Client-Engine" => defined?(RUBY_ENGINE) ? RUBY_ENGINE : "",
-      "Client-Hostname" => Socket.gethostname,
-    }
 
-    attr_reader :url
+    # Private: Default read timeout on requests.
+    READ_TIMEOUT = 8
+
+    # Private: Default open timeout on requests.
+    OPEN_TIMEOUT = 4
+
+    # Private
+    attr_reader :url, :headers, :retries, :logger, :backoff_policy, :http
 
     def initialize(options = {})
       @url = options[:url] || raise(ArgumentError, ":url is required to be present so we know where to send batches")
@@ -34,7 +30,7 @@ module Brow
         @uri.path = "/"
       end
 
-      @headers = HEADERS.merge(options[:headers] || {})
+      @headers = options[:headers] || {}
       @retries = options[:retries] || RETRIES
 
       @logger = options.fetch(:logger) { Brow.logger }
@@ -52,25 +48,29 @@ module Brow
     #
     # @return [Response] API response
     def send_batch(batch)
-      @logger.debug("[brow]") { "Sending request for #{batch.length} items" }
+      logger.debug("[brow]") { "Sending request for #{batch.length} items" }
 
-      last_response, exception = retry_with_backoff(@retries) do
+      last_response, exception = retry_with_backoff(retries) do
         response = send_request(batch)
-        @logger.debug("[brow]") { "Response: status=#{response.code}, body=#{response.body}" }
+        logger.debug("[brow]") { "Response: status=#{response.code}, body=#{response.body}" }
         [Response.new(response.code.to_i, nil), retry?(response)]
       end
 
       if exception
-        @logger.error("[brow]") { exception.message }
-        exception.backtrace.each { |line| @logger.error(line) }
+        logger.error("[brow]") { exception.message }
+        exception.backtrace.each { |line| logger.error(line) }
         Response.new(-1, exception.to_s)
       else
         last_response
       end
+    ensure
+      backoff_policy.reset
+      batch.clear
     end
 
     # Closes a persistent connection if it exists
     def shutdown
+      logger.info("[brow]") { "Transport shutting down" }
       @http.finish if @http.started?
     end
 
@@ -80,15 +80,15 @@ module Brow
       status_code = response.code.to_i
       if status_code >= 500
         # Server error. Retry and log.
-        @logger.info("[brow]") { "Server error: status=#{status_code}, body=#{response.body}" }
+        logger.info("[brow]") { "Server error: status=#{status_code}, body=#{response.body}" }
         true
       elsif status_code == 429
         # Rate limited. Retry and log.
-        @logger.info("[brow]") { "Rate limit error: body=#{response.body}" }
+        logger.info("[brow]") { "Rate limit error: body=#{response.body}" }
         true
       elsif status_code >= 400
         # Client error. Do not retry, but log.
-        @logger.error("[brow]") { "Client error: status=#{status_code}, body=#{response.body}" }
+        logger.error("[brow]") { "Client error: status=#{status_code}, body=#{response.body}" }
         false
       else
         false
@@ -110,13 +110,13 @@ module Brow
         result, should_retry = yield
         return [result, nil] unless should_retry
       rescue StandardError => error
-        @logger.debug("[brow]") {  "Request error: #{error}" }
+        logger.debug("[brow]") {  "Request error: #{error}" }
         should_retry = true
         caught_exception = error
       end
 
       if should_retry && (retries_remaining > 1)
-        @logger.debug("[brow]") { "Retrying request, #{retries_remaining} retries left" }
+        logger.debug("[brow]") { "Retrying request, #{retries_remaining} retries left" }
         sleep(@backoff_policy.next_interval.to_f / 1000)
         retry_with_backoff(retries_remaining - 1, &block)
       else
@@ -126,6 +126,14 @@ module Brow
 
     def send_request(batch)
       headers = {
+        "Accept" => "application/json",
+        "Content-Type" => "application/json",
+        "User-Agent" => "brow-ruby/#{Brow::VERSION}",
+        "Client-Language" => "ruby",
+        "Client-Language-Version" => "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
+        "Client-Platform" => RUBY_PLATFORM,
+        "Client-Engine" => defined?(RUBY_ENGINE) ? RUBY_ENGINE : "",
+        "Client-Hostname" => Socket.gethostname,
         "Client-Pid" => Process.pid.to_s,
         "Client-Thread" => Thread.current.object_id.to_s,
       }.merge(@headers)

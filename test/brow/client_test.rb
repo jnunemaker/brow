@@ -3,52 +3,38 @@ require "test_helper"
 class BrowClientTest < Minitest::Test
   def setup
     @queue = Queue.new
-    @worker = NoopWorker.new
   end
 
   def test_initialize
     client = build_client
-
-    assert_nil client.instance_variable_get("@test")
-    assert_equal 10_000, client.instance_variable_get("@max_queue_size")
-    assert_equal Brow.logger, client.instance_variable_get("@logger")
-    assert_equal @queue, client.instance_variable_get("@queue")
-    assert_equal @worker, client.instance_variable_get("@worker")
+    assert_instance_of Brow::Worker, client.worker
   end
 
   def test_initialize_with_options
     queue = Queue.new
-    worker = NoopWorker.new
-    logger = Logger.new(STDOUT)
     client = build_client({
-      test: true,
       max_queue_size: 10,
-      worker: worker,
-      logger: logger,
       queue: queue,
     })
 
-    assert client.instance_variable_get("@test")
-    assert_equal 10, client.instance_variable_get("@max_queue_size")
-    assert_equal worker, client.instance_variable_get("@worker")
-    assert_equal logger, client.instance_variable_get("@logger")
-    assert_equal queue, client.instance_variable_get("@queue")
+    assert_equal 10, client.worker.max_queue_size
+    assert_equal queue, client.worker.queue
   end
 
-  def test_push
-    event = {foo: "bar"}
+  def test_push_symbol_keys
     client = build_client
-    client.push(event)
+    client.push(foo: "bar")
     item = @queue.pop
-    assert_equal event, item
+    expected = {"foo" => "bar"}
+    assert_equal expected, item
   end
 
   def test_push_string_keys
-    event = {foo: "bar"}
     client = build_client
-    client.push({"foo" => "bar"})
+    client.push("foo" => "bar")
     item = @queue.pop
-    assert_equal event, item
+    expected = {"foo" => "bar"}
+    assert_equal expected, item
   end
 
   def test_push_with_dates_and_times
@@ -61,9 +47,9 @@ class BrowClientTest < Minitest::Test
 
     client.push(event)
     expected = {
-      time: "2013-01-01T01:01:02.000023Z",
-      date_time: "2013-01-01T01:01:10.000000+00:00",
-      date: "2013-01-01",
+      "time" => "2013-01-01T01:01:02.000023Z",
+      "date_time" => "2013-01-01T01:01:10.000000+00:00",
+      "date" => "2013-01-01",
     }
     item = @queue.pop
     assert_equal expected, item
@@ -83,46 +69,20 @@ class BrowClientTest < Minitest::Test
     refute client.push(event)
   end
 
-  def test_push_and_shutdown_start_and_stop_worker
+  def test_push
+    stub_request(:post, "http://example.com/")
     client = build_client
 
-    assert_nil client.instance_variable_get("@worker_thread")
+    assert_nil client.worker.thread
     client.push(n: 1)
-    assert_instance_of Thread, client.instance_variable_get("@worker_thread")
+    assert_instance_of Thread, client.worker.thread
 
-    client.shutdown
+    client.worker.stop
     sleep 0.2
-    refute_predicate client.instance_variable_get("@worker_thread"), :alive?
+    refute_predicate client.worker.thread, :alive?
   end
 
-  def test_flush_waits_for_the_queue_to_finish_on_a_flush
-    client = build_client(worker: DummyWorker.new(@queue))
-    client.push foo: "bar"
-    client.push foo: "bar"
-    client.flush
-    assert_equal 0, client.queued_messages
-  end
-
-  def test_flush_completes_when_the_process_forks
-    client = build_client(worker: DummyWorker.new(@queue))
-    client.push foo: "bar"
-    Process.fork do
-      client.push foo: "bar"
-      client.flush
-      assert_equal 0, client.queued_messages
-    end
-    Process.wait
-  end
-
-  def test_test_mode
-    event = {foo: "bar"}
-    client = build_client(test: true)
-    5.times { assert client.push(event) }
-    assert_equal 5, client.test_queue.size
-    assert_equal 0, @queue.size
-  end
-
-  def test_flushes_at_exit
+  def test_shutdown_at_exit
     begin
       server = FakeServer.new
       client = Brow::Client.new({
@@ -131,21 +91,28 @@ class BrowClientTest < Minitest::Test
         retries: 2,
       })
 
-      pid = fork {
-        client.push(n: 1)
-      }
+      pid = fork { client.push(n: 1) }
       Process.waitpid pid, 0
 
       assert_equal 1, server.requests.size
       request = server.requests.first
       assert_equal "/events", request.path
       assert_equal pid, Integer(request.env.fetch("HTTP_CLIENT_PID"))
+
+      assert_equal "brow-ruby/#{Brow::VERSION}", request.env.fetch("HTTP_USER_AGENT")
+      assert_equal "ruby", request.env.fetch("HTTP_CLIENT_LANGUAGE")
+      assert_equal "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
+        request.env.fetch("HTTP_CLIENT_LANGUAGE_VERSION")
+
+      assert_equal RUBY_PLATFORM, request.env.fetch("HTTP_CLIENT_PLATFORM")
+      assert_equal RUBY_ENGINE, request.env.fetch("HTTP_CLIENT_ENGINE")
+      refute_nil request.env["HTTP_CLIENT_HOSTNAME"]
     ensure
       server.shutdown
     end
   end
 
-  def test_flushes_queue_when_forked
+  def test_processes_queue_when_forked
     begin
       server = FakeServer.new
       client = Brow::Client.new({
@@ -155,17 +122,22 @@ class BrowClientTest < Minitest::Test
       })
       client.push(n: 1)
 
-      pid = fork {
-        client.push(n: 2)
-      }
+      pid = fork { client.push(n: 2) }
       Process.waitpid pid, 0
 
-      assert_equal 2, server.requests.size
+      # gotta shutdown the parent process worker
+      client.worker.stop
+
+      messages = server.requests.map(&:body).map(&:string).map { |text|
+        JSON.parse(text).fetch("messages")
+      }.flatten
+
+      assert_equal [1, 2], messages.map { |message| message["n"] }.sort
       assert_equal ["/events"], server.requests.map(&:path).uniq
       pids = server.requests.map { |request|
         request.env.fetch("HTTP_CLIENT_PID")
-      }.uniq
-      assert_equal 2, pids.size
+      }
+      assert_equal 2, pids.uniq.size
     ensure
       server.shutdown
     end
@@ -180,7 +152,7 @@ class BrowClientTest < Minitest::Test
         shutdown_automatically: true,
       })
 
-      client.instance_variable_get("@worker_mutex").lock
+      client.worker.mutex.lock
 
       pid = fork {
         client.push(n: 1)
@@ -200,7 +172,7 @@ class BrowClientTest < Minitest::Test
 
   def build_client(options = {})
     Brow::Client.new({
-      worker: @worker,
+      url: "http://example.com",
       queue: @queue,
       shutdown_automatically: false,
     }.merge(options))
