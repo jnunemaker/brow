@@ -22,7 +22,7 @@ module Brow
     MAX_QUEUE_SIZE = 10_000
 
     # Private
-    attr_reader :queue, :pid, :mutex, :on_error, :batch_size, :max_queue_size
+    attr_reader :thread, :queue, :pid, :mutex, :on_error, :batch_size, :max_queue_size
 
     # Private
     attr_reader :logger, :transport, :shutdown_timeout

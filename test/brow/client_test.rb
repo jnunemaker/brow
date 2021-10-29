@@ -69,17 +69,18 @@ class BrowClientTest < Minitest::Test
     refute client.push(event)
   end
 
-  # def test_push
-  #   client = build_client
+  def test_push
+    stub_request(:post, "http://example.com/")
+    client = build_client
 
-  #   assert_nil client.instance_variable_get("@worker_thread")
-  #   client.push(n: 1)
-  #   assert_instance_of Thread, client.instance_variable_get("@worker_thread")
+    assert_nil client.worker.thread
+    client.push(n: 1)
+    assert_instance_of Thread, client.worker.thread
 
-  #   client.shutdown
-  #   sleep 0.2
-  #   refute_predicate client.instance_variable_get("@worker_thread"), :alive?
-  # end
+    client.worker.stop
+    sleep 0.2
+    refute_predicate client.worker.thread, :alive?
+  end
 
   def test_shutdown_at_exit
     begin
