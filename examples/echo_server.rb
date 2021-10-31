@@ -1,3 +1,11 @@
+# Usage: bundle exec ruby examples/echo_server.rb
+#
+# By default this starts in thread that other example scripts can use.
+#
+# By setting FOREGROUND=1, this will run in the foreground instead of
+# background thread.
+#
+# FOREGROUND=1 bundle exec ruby examples/echo_server.rb
 require "socket"
 require "thread"
 require "logger"
@@ -8,18 +16,12 @@ require "rack/handler/webrick"
 class EchoServer
   include Singleton
 
-  attr_reader :port
+  attr_reader :port, :thread
 
   def initialize
     @logger = Logger.new(STDOUT)
     @logger.level = Logger::INFO
     @port = ENV.fetch("PORT", 9999)
-    builder = Rack::Builder.new
-    builder.run ->(env) {
-      request = Rack::Request.new(env)
-      @logger.debug JSON.parse(request.body.read).inspect
-      [200, {}, [""]]
-    }
     @started = false
 
     @server = WEBrick::HTTPServer.new({
@@ -30,7 +32,12 @@ class EchoServer
         [@logger, WEBrick::AccessLog::COMMON_LOG_FORMAT],
       ],
     })
-    @server.mount '/', Rack::Handler::WEBrick, builder
+
+    @server.mount '/', Rack::Handler::WEBrick, ->(env) {
+      request = Rack::Request.new(env)
+      @logger.debug JSON.parse(request.body.read).inspect
+      [200, {}, [""]]
+    }
 
     @thread = Thread.new { @server.start }
     Timeout.timeout(10) { :wait until @started }
@@ -38,3 +45,7 @@ class EchoServer
 end
 
 EchoServer.instance
+
+if ENV.fetch("FOREGROUND", "0") == "1"
+  EchoServer.instance.thread.join
+end
