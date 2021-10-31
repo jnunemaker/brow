@@ -6,9 +6,15 @@ client = Brow::Client.new({
   batch_size: 10,
 })
 
-5.times do |n|
+client.push({
+  now: Time.now.utc,
+  parent: true,
+})
+
+pid = fork {
   client.push({
-    n: n,
     now: Time.now.utc,
+    child: true,
   })
-end
+}
+Process.waitpid pid, 0
