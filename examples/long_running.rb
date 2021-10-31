@@ -1,10 +1,14 @@
 require_relative "../lib/brow"
-# require_relative "echo_server"
+
+port = ENV.fetch("PORT") { 9999 }
+
+if ENV.fetch("START_SERVER", "1") == "1"
+  require_relative "echo_server"
+  port = EchoServer.instance.port
+end
 
 Brow.logger = Logger.new(STDOUT)
 Brow.logger.level = Logger::INFO
-
-port = ENV.fetch("PORT") { EchoServer.instance.port }
 
 client = Brow::Client.new({
   url: "http://localhost:#{port}",
