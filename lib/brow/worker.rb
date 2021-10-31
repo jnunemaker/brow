@@ -108,6 +108,7 @@ module Brow
 
         case message
         when SHUTDOWN
+          logger.info("[brow]") { "Worker shutting down" }
           send_batch(batch) unless batch.empty?
           break
         else
