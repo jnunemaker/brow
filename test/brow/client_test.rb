@@ -25,7 +25,7 @@ class BrowClientTest < Minitest::Test
     client = build_client
     client.push(foo: "bar")
     item = @queue.pop
-    expected = {"foo" => "bar"}
+    expected = {foo: "bar"}
     assert_equal expected, item
   end
 
@@ -40,16 +40,16 @@ class BrowClientTest < Minitest::Test
   def test_push_with_dates_and_times
     event = {
       time: Time.utc(2013, 1, 1, 1, 1, 2, 23),
-      date_time: DateTime.new(2013, 1, 1, 1, 1, 10),
+      "date_time" => DateTime.new(2013, 1, 1, 1, 1, 10),
       date: Date.new(2013, 1, 1),
     }
     client = build_client
 
     client.push(event)
     expected = {
-      "time" => "2013-01-01T01:01:02.000023Z",
+      time: "2013-01-01T01:01:02.000023Z",
       "date_time" => "2013-01-01T01:01:10.000000+00:00",
-      "date" => "2013-01-01",
+      date: "2013-01-01",
     }
     item = @queue.pop
     assert_equal expected, item

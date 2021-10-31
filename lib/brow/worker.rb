@@ -67,7 +67,7 @@ module Brow
       raise ArgumentError, "data must be a Hash" unless data.is_a?(Hash)
       start
 
-      data = Utils.isoify_dates(Utils.stringify_keys(data))
+      data = Utils.isoify_dates(data)
 
       if queue.length < max_queue_size
         queue << data
