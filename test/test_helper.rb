@@ -12,7 +12,7 @@ require "webmock/minitest"
 require_relative "support/fake_server"
 
 # Timeout tests that get stuck in worker loop or that take too long.
-Maxitest.timeout = 5
+Maxitest.timeout = 10
 
 # Setup webmock to allow localhost so we can hit the fake test server.
 WebMock.disable_net_connect!(allow_localhost: true)
