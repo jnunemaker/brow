@@ -9,6 +9,7 @@ gem "maxitest", "~> 4.1"
 gem "minitest-heat", "~> 0.0"
 gem "webmock", "~> 3.10.0"
 gem "rack", "~> 2.2.3"
+gem "climate_control", "~> 0.2.0"
 
 group(:guard) do
   gem "guard", "~> 2.18.0"

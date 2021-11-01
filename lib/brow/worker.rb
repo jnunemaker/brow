@@ -52,11 +52,18 @@ module Brow
       @mutex = Mutex.new
       options = Brow::Utils.symbolize_keys(options)
       @on_error = options[:on_error] || DEFAULT_ON_ERROR
-      @batch_size = options[:batch_size]
-      @max_queue_size = options.fetch(:max_queue_size) { MAX_QUEUE_SIZE }
       @logger = options.fetch(:logger) { Brow.logger }
       @transport = options.fetch(:transport) { Transport.new(options) }
-      @shutdown_timeout = options.fetch(:shutdown_timeout) { SHUTDOWN_TIMEOUT }
+
+      @batch_size = options.fetch(:batch_size) {
+        ENV.fetch("BROW_BATCH_SIZE", MessageBatch::MAX_SIZE).to_i
+      }
+      @max_queue_size = options.fetch(:max_queue_size) {
+        ENV.fetch("BROW_MAX_QUEUE_SIZE", MAX_QUEUE_SIZE).to_i
+      }
+      @shutdown_timeout = options.fetch(:shutdown_timeout) {
+        ENV.fetch("BROW_SHUTDOWN_TIMEOUT", SHUTDOWN_TIMEOUT).to_f
+      }
 
       if options.fetch(:shutdown_automatically, true)
         at_exit { stop }

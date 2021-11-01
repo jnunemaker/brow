@@ -16,6 +16,44 @@ class BrowTransportTest < Minitest::Test
     end
   end
 
+  def test_initialize_from_env
+    env = {
+      "BROW_URL" => "https://foo.com/bar",
+      "BROW_RETRIES" => "1",
+      "BROW_READ_TIMEOUT" => "10",
+      "BROW_OPEN_TIMEOUT" => "100",
+      "BROW_WRITE_TIMEOUT" => "1000",
+    }
+    with_modified_env env do
+      transport = Brow::Transport.new
+      assert_equal "https://foo.com/bar", transport.url
+      assert_equal 1, transport.retries
+      assert_equal 10, transport.http.read_timeout
+      assert_equal 100, transport.http.open_timeout
+
+      if RUBY_VERSION >= '2.6.0'
+        assert_equal 1_000, transport.http.write_timeout
+      end
+    end
+  end
+
+  def test_initialize_with_timeouts
+    options = {
+      url: "https://foo.com/bar",
+      read_timeout: 1,
+      open_timeout: 2,
+      write_timeout: 3,
+    }
+
+    transport = Brow::Transport.new(options)
+    assert_equal 1, transport.http.read_timeout
+    assert_equal 2, transport.http.open_timeout
+
+    if RUBY_VERSION >= '2.6.0'
+      assert_equal 3, transport.http.write_timeout
+    end
+  end
+
   def test_initialize_with_options
     headers = {
       "Some-Token" => "asdf",

@@ -25,11 +25,13 @@ module Brow
     def_delegators :@messages, :size
     def_delegators :@messages, :count
 
-    attr_reader :uuid, :json_size
+    attr_reader :uuid, :json_size, :max_size
 
     def initialize(options = {})
       clear
-      @max_size = options[:max_size] || MAX_SIZE
+      @max_size = options.fetch(:max_size) {
+        ENV.fetch("BROW_BATCH_SIZE", MAX_SIZE).to_i
+      }
       @logger = options.fetch(:logger) { Brow.logger }
     end
 

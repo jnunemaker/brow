@@ -11,7 +11,7 @@ class BrowWorkerTest < Minitest::Test
     transport = worker.transport
     assert_instance_of Brow::Transport, transport
     assert_equal "https://foo.com/bar", transport.url
-    assert_nil worker.batch_size
+    assert_equal 100, worker.batch_size
   end
 
   def test_initialize_with_options
@@ -28,6 +28,20 @@ class BrowWorkerTest < Minitest::Test
     assert_equal on_error, worker.on_error
     assert_equal transport, worker.transport
     assert_equal 10, worker.batch_size
+  end
+
+  def test_initialize_from_env
+    env = {
+      "BROW_BATCH_SIZE" => "1",
+      "BROW_MAX_QUEUE_SIZE" => "2",
+      "BROW_SHUTDOWN_TIMEOUT" => "100",
+    }
+    with_modified_env env do
+      worker = Brow::Worker.new(url: "https://foo.com/bar")
+      assert_equal 1, worker.batch_size
+      assert_equal 2, worker.max_queue_size
+      assert_equal 100.0, worker.shutdown_timeout
+    end
   end
 
   def test_initialize_with_transport_options

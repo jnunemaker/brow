@@ -24,6 +24,22 @@ class BrowBackoffPolicyTest < Minitest::Test
     assert_equal policy.randomization_factor, 0.4
   end
 
+  def test_initialize_from_env
+    env = {
+      "BROW_BACKOFF_MIN_TIMEOUT_MS" => "1000",
+      "BROW_BACKOFF_MAX_TIMEOUT_MS" => "2000",
+      "BROW_BACKOFF_MULTIPLIER" => "1.9",
+      "BROW_BACKOFF_RANDOMIZATION_FACTOR" => "0.1",
+    }
+    with_modified_env env do
+      policy = Brow::BackoffPolicy.new
+      assert_equal 1_000, policy.min_timeout_ms
+      assert_equal 2_000, policy.max_timeout_ms
+      assert_equal 1.9, policy.multiplier
+      assert_equal 0.1, policy.randomization_factor
+    end
+  end
+
   def test_next_interval
     policy = Brow::BackoffPolicy.new({
       min_timeout_ms: 1_000,

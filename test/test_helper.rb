@@ -3,6 +3,7 @@ require "pathname"
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "brow"
 
+require "climate_control"
 require "maxitest/autorun"
 require "maxitest/timeout"
 require "maxitest/threads"
@@ -28,3 +29,11 @@ class NoopTransport
   def shutdown(*)
   end
 end
+
+module ClimateControlHelpers
+  def with_modified_env(options, &block)
+    ClimateControl.modify(options, &block)
+  end
+end
+
+Minitest::Test.send :include, ClimateControlHelpers

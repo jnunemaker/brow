@@ -7,6 +7,16 @@ class BrowMessageBatchTest < Minitest::Test
     refute_nil batch.uuid
   end
 
+  def test_initialize_from_env
+    env = {
+      "BROW_BATCH_SIZE" => "1234",
+    }
+    with_modified_env env do
+      batch = Brow::MessageBatch.new
+      assert_equal 1234, batch.max_size
+    end
+  end
+
   def test_clear
     message = {"foo" => "bar"}
     batch = Brow::MessageBatch.new

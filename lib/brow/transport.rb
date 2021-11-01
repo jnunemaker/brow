@@ -18,11 +18,18 @@ module Brow
     # Private: Default open timeout on requests.
     OPEN_TIMEOUT = 4
 
+    # Private: Default write timeout on requests.
+    WRITE_TIMEOUT = 4
+
     # Private
     attr_reader :url, :headers, :retries, :logger, :backoff_policy, :http
 
     def initialize(options = {})
-      @url = options[:url] || raise(ArgumentError, ":url is required to be present so we know where to send batches")
+      @url = options.fetch(:url) {
+        ENV.fetch("BROW_URL") {
+          raise ArgumentError, ":url is required to be present so we know where to send batches"
+        }
+      }
       @uri = URI.parse(@url)
 
       # Default path if people forget a slash.
@@ -31,7 +38,9 @@ module Brow
       end
 
       @headers = options[:headers] || {}
-      @retries = options[:retries] || RETRIES
+      @retries = options.fetch(:retries) {
+        ENV.fetch("BROW_RETRIES", RETRIES).to_i
+      }
 
       @logger = options.fetch(:logger) { Brow.logger }
       @backoff_policy = options.fetch(:backoff_policy) {
@@ -40,8 +49,20 @@ module Brow
 
       @http = Net::HTTP.new(@uri.host, @uri.port)
       @http.use_ssl = @uri.scheme == "https"
-      @http.read_timeout = options[:read_timeout] || READ_TIMEOUT
-      @http.open_timeout = options[:open_timeout] || OPEN_TIMEOUT
+      @http.read_timeout = options.fetch(:read_timeout) {
+        ENV.fetch("BROW_READ_TIMEOUT", READ_TIMEOUT).to_f
+      }
+      @http.open_timeout = options.fetch(:open_timeout) {
+        ENV.fetch("BROW_OPEN_TIMEOUT", OPEN_TIMEOUT).to_f
+      }
+
+      if RUBY_VERSION >= '2.6.0'
+        @http.write_timeout = options.fetch(:write_timeout) {
+          ENV.fetch("BROW_WRITE_TIMEOUT", WRITE_TIMEOUT).to_f
+        }
+      else
+        Kernel.warn("Warning: option :write_timeout requires Ruby version 2.6.0 or later")
+      end
     end
 
     # Sends a batch of messages to the API

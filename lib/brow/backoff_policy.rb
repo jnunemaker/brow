@@ -32,10 +32,18 @@ module Brow
     #   :randomization_factor - The randomization factor to use to create a range
     #                           around the retry interval.
     def initialize(options = {})
-      @min_timeout_ms = options[:min_timeout_ms] || MIN_TIMEOUT_MS
-      @max_timeout_ms = options[:max_timeout_ms] || MAX_TIMEOUT_MS
-      @multiplier = options[:multiplier] || MULTIPLIER
-      @randomization_factor = options[:randomization_factor] || RANDOMIZATION_FACTOR
+      @min_timeout_ms = options.fetch(:min_timeout_ms) {
+        ENV.fetch("BROW_BACKOFF_MIN_TIMEOUT_MS", MIN_TIMEOUT_MS).to_i
+      }
+      @max_timeout_ms = options.fetch(:max_timeout_ms) {
+        ENV.fetch("BROW_BACKOFF_MAX_TIMEOUT_MS", MAX_TIMEOUT_MS).to_i
+      }
+      @multiplier = options.fetch(:multiplier) {
+        ENV.fetch("BROW_BACKOFF_MULTIPLIER", MULTIPLIER).to_f
+      }
+      @randomization_factor = options.fetch(:randomization_factor) {
+        ENV.fetch("BROW_BACKOFF_RANDOMIZATION_FACTOR", RANDOMIZATION_FACTOR).to_f
+      }
 
       @attempts = 0
     end
