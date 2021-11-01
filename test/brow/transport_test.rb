@@ -57,7 +57,7 @@ class BrowTransportTest < Minitest::Test
         headers: {
           "Accept" => "application/json",
           "Content-Type" => "application/json",
-          "User-Agent" => "brow-ruby/#{Brow::VERSION}",
+          "User-Agent" => "Brow v#{Brow::VERSION}",
         },
         body: @batch.to_json,
       })

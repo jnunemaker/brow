@@ -128,7 +128,7 @@ module Brow
       headers = {
         "Accept" => "application/json",
         "Content-Type" => "application/json",
-        "User-Agent" => "brow-ruby/#{Brow::VERSION}",
+        "User-Agent" => "Brow v#{Brow::VERSION}",
         "Client-Language" => "ruby",
         "Client-Language-Version" => "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
         "Client-Platform" => RUBY_PLATFORM,
