@@ -99,7 +99,7 @@ class BrowClientTest < Minitest::Test
       assert_equal "/events", request.path
       assert_equal pid, Integer(request.env.fetch("HTTP_CLIENT_PID"))
 
-      assert_equal "brow-ruby/#{Brow::VERSION}", request.env.fetch("HTTP_USER_AGENT")
+      assert_equal "Brow v#{Brow::VERSION}", request.env.fetch("HTTP_USER_AGENT")
       assert_equal "ruby", request.env.fetch("HTTP_CLIENT_LANGUAGE")
       assert_equal "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
         request.env.fetch("HTTP_CLIENT_LANGUAGE_VERSION")
