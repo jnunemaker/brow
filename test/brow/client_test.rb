@@ -65,6 +65,8 @@ class BrowClientTest < Minitest::Test
   def test_push_when_full
     event = {foo: "bar"}
     client = build_client(max_queue_size: 1)
+    # ensure the worker thread doesn't start up to work off the queue
+    client.worker.mutex.lock
     assert client.push(event)
     refute client.push(event)
   end
