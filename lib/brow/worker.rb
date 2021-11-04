@@ -139,17 +139,24 @@ module Brow
     end
 
     def ensure_worker_running
+      # Return early if thread is alive and avoid the mutex lock and unlock.
+      return if thread_alive?
+
       # If another thread is starting worker thread, then return early so this
       # thread can enqueue and move on with life.
       return unless mutex.try_lock
 
       begin
-        return if @thread && @thread.alive?
+        return if thread_alive?
         @thread = Thread.new { run }
         logger.debug("[brow]") { "Worker thread [#{@thread.object_id}] started" }
       ensure
         mutex.unlock
       end
+    end
+
+    def thread_alive?
+      @thread && @thread.alive?
     end
 
     def reset
