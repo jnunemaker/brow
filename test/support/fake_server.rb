@@ -19,7 +19,7 @@ class FakeServer
     end
   end
 
-  attr_reader :requests
+  attr_reader :requests, :thread
 
   def initialize
     @started = false
@@ -53,7 +53,14 @@ class FakeServer
   end
 
   def shutdown
-    @thread.kill if @thread
+    if thread
+      server.shutdown
+      # Webrick starts thread for request timeouts that doesn't get killed
+      # in Server#shutdown.
+      WEBrick::Utils::TimeoutHandler.terminate
+      thread.kill
+      thread.join
+    end
   end
 
   private
