@@ -4,22 +4,7 @@ require "rack"
 require "rack/handler/webrick"
 
 class FakeServer
-  attr_reader :port
-
-  class RequestTrackingMiddleware
-    def initialize(app, on_request)
-      @app = app
-      @on_request = on_request
-    end
-
-    def call(env)
-      request = Rack::Request.new(env)
-      @on_request.call(request)
-      @app.call(env)
-    end
-  end
-
-  attr_reader :requests, :thread
+  attr_reader :port, :requests, :thread
 
   def initialize
     @started = false
@@ -45,16 +30,6 @@ class FakeServer
 
   private
 
-  def app
-    @app ||= begin
-      on_request = ->(request) { @requests << request }
-      builder = Rack::Builder.new
-      builder.use RequestTrackingMiddleware, on_request
-      builder.run ->(*) { [200, {}, [""]] }
-      builder
-    end
-  end
-
   def server
     @server ||= begin
       @port ||= 10_001
@@ -72,7 +47,10 @@ class FakeServer
         server_options[:Port] = @port
         retry
       end
-      server.mount '/', Rack::Handler::WEBrick, app
+      server.mount '/', Rack::Handler::WEBrick, ->(env) {
+        @requests << Rack::Request.new(env)
+        [200, {}, [""]]
+      }
       server
     end
   end
