@@ -28,6 +28,8 @@ class BrowClientTest < Minitest::Test
     item = @queue.pop
     expected = {foo: "bar"}
     assert_equal expected, item
+  ensure
+    client.worker.stop
   end
 
   def test_push_string_keys
@@ -36,6 +38,8 @@ class BrowClientTest < Minitest::Test
     item = @queue.pop
     expected = {"foo" => "bar"}
     assert_equal expected, item
+  ensure
+    client.worker.stop
   end
 
   def test_push_with_dates_and_times
@@ -54,6 +58,8 @@ class BrowClientTest < Minitest::Test
     }
     item = @queue.pop
     assert_equal expected, item
+  ensure
+    client.worker.stop
   end
 
   def test_push_without_hash
