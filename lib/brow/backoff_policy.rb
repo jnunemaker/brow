@@ -45,6 +45,18 @@ module Brow
         ENV.fetch("BROW_BACKOFF_RANDOMIZATION_FACTOR", RANDOMIZATION_FACTOR).to_f
       }
 
+      unless @min_timeout_ms >= 0
+        raise ArgumentError, ":min_timeout_ms must be >= 0 but was #{@min_timeout_ms.inspect}"
+      end
+
+      unless @max_timeout_ms >= 0
+        raise ArgumentError, ":min_timeout_ms must be >= 0 but was #{@max_timeout_ms.inspect}"
+      end
+
+      unless @min_timeout_ms <= max_timeout_ms
+        raise ArgumentError, ":min_timeout_ms (#{@min_timeout_ms.inspect}) must be <= :max_timeout_ms (#{@max_timeout_ms.inspect})"
+      end
+
       @attempts = 0
     end
 

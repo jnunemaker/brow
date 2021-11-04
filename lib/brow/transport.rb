@@ -3,6 +3,7 @@
 require 'net/http'
 require 'net/https'
 require 'json'
+require 'set'
 
 require_relative 'response'
 require_relative 'backoff_policy'
@@ -21,6 +22,9 @@ module Brow
     # Private: Default write timeout on requests.
     WRITE_TIMEOUT = 4
 
+    # Private: URL schemes that this transport supports.
+    VALID_HTTP_SCHEMES = Set["http", "https"].freeze
+
     # Private
     attr_reader :url, :headers, :retries, :logger, :backoff_policy, :http
 
@@ -32,6 +36,10 @@ module Brow
       }
       @uri = URI.parse(@url)
 
+      unless VALID_HTTP_SCHEMES.include?(@uri.scheme)
+        raise ArgumentError, ":url was must be http(s) scheme but was #{@uri.scheme.inspect}"
+      end
+
       # Default path if people forget a slash.
       if @uri.path.nil? || @uri.path.empty?
         @uri.path = "/"
@@ -42,6 +50,10 @@ module Brow
         ENV.fetch("BROW_RETRIES", RETRIES).to_i
       }
 
+      unless @retries >= 0
+        raise ArgumentError, ":retries must be >= to 0 but was #{@retries.inspect}"
+      end
+
       @logger = options.fetch(:logger) { Brow.logger }
       @backoff_policy = options.fetch(:backoff_policy) {
         Brow::BackoffPolicy.new(options)
@@ -49,17 +61,22 @@ module Brow
 
       @http = Net::HTTP.new(@uri.host, @uri.port)
       @http.use_ssl = @uri.scheme == "https"
-      @http.read_timeout = options.fetch(:read_timeout) {
+
+      read_timeout = options.fetch(:read_timeout) {
         ENV.fetch("BROW_READ_TIMEOUT", READ_TIMEOUT).to_f
       }
-      @http.open_timeout = options.fetch(:open_timeout) {
+      @http.read_timeout = read_timeout if read_timeout
+
+      open_timeout = options.fetch(:open_timeout) {
         ENV.fetch("BROW_OPEN_TIMEOUT", OPEN_TIMEOUT).to_f
       }
+      @http.open_timeout = open_timeout if open_timeout
 
       if RUBY_VERSION >= '2.6.0'
-        @http.write_timeout = options.fetch(:write_timeout) {
+        write_timeout = options.fetch(:write_timeout) {
           ENV.fetch("BROW_WRITE_TIMEOUT", WRITE_TIMEOUT).to_f
         }
+        @http.write_timeout = write_timeout if write_timeout
       else
         Kernel.warn("Warning: option :write_timeout requires Ruby version 2.6.0 or later")
       end

@@ -17,6 +17,18 @@ class BrowMessageBatchTest < Minitest::Test
     end
   end
 
+  def test_initialize_with_invalid_max_size
+    error = assert_raises ArgumentError do
+      Brow::MessageBatch.new(max_size: 0)
+    end
+    assert_equal ":max_size must be > 0 but was 0", error.message
+
+    error = assert_raises ArgumentError do
+      Brow::MessageBatch.new(max_size: -1)
+    end
+    assert_equal ":max_size must be > 0 but was -1", error.message
+  end
+
   def test_clear
     message = {"foo" => "bar"}
     batch = Brow::MessageBatch.new

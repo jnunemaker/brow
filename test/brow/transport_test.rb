@@ -11,6 +11,23 @@ class BrowTransportTest < Minitest::Test
     assert_equal "https://foo.com/bar", transport.url
   end
 
+  def test_initialize_with_invalid_url
+    error = assert_raises ArgumentError do
+      Brow::Transport.new(url: "barf!")
+    end
+
+    assert_equal ":url was must be http(s) scheme but was nil",
+      error.message
+  end
+
+  def test_initialize_with_invalid_retries
+    error = assert_raises ArgumentError do
+      Brow::Transport.new(valid_options(retries: -1))
+    end
+
+    assert_equal ":retries must be >= to 0 but was -1", error.message
+  end
+
   def test_initialize_without_url
     assert_raises ArgumentError do
       Brow::Transport.new
@@ -223,5 +240,13 @@ class BrowTransportTest < Minitest::Test
     assert_equal 1, attempts
     assert_nil response.error
     assert_equal 0, transport.backoff_policy.attempts
+  end
+
+  private
+
+  def valid_options(options = {})
+    {
+      url: "https://example.com/",
+    }.merge(options)
   end
 end

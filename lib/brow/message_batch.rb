@@ -32,6 +32,11 @@ module Brow
       @max_size = options.fetch(:max_size) {
         ENV.fetch("BROW_BATCH_SIZE", MAX_SIZE).to_i
       }
+
+      unless @max_size > 0
+        raise ArgumentError, ":max_size must be > 0 but was #{@max_size.inspect}"
+      end
+
       @logger = options.fetch(:logger) { Brow.logger }
     end
 

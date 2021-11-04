@@ -24,6 +24,35 @@ class BrowBackoffPolicyTest < Minitest::Test
     assert_equal policy.randomization_factor, 0.4
   end
 
+  def test_initialize_with_min_higher_than_max
+    error = assert_raises ArgumentError do
+      Brow::BackoffPolicy.new({
+        min_timeout_ms: 2,
+        max_timeout_ms: 1,
+      })
+    end
+    assert_equal ":min_timeout_ms (2) must be <= :max_timeout_ms (1)",
+      error.message
+  end
+
+  def test_initialize_with_invalid_min_timeout_ms
+    error = assert_raises ArgumentError do
+      Brow::BackoffPolicy.new({
+        min_timeout_ms: -1,
+      })
+    end
+    assert_equal ":min_timeout_ms must be >= 0 but was -1", error.message
+  end
+
+  def test_initialize_with_invalid_max_timeout_ms
+    error = assert_raises ArgumentError do
+      Brow::BackoffPolicy.new({
+        max_timeout_ms: -1,
+      })
+    end
+    assert_equal ":max_timeout_ms must be >= 0 but was -1", error.message
+  end
+
   def test_initialize_from_env
     env = {
       "BROW_BACKOFF_MIN_TIMEOUT_MS" => "1000",
