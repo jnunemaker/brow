@@ -50,7 +50,7 @@ module Brow
       end
 
       unless @max_timeout_ms >= 0
-        raise ArgumentError, ":min_timeout_ms must be >= 0 but was #{@max_timeout_ms.inspect}"
+        raise ArgumentError, ":max_timeout_ms must be >= 0 but was #{@max_timeout_ms.inspect}"
       end
 
       unless @min_timeout_ms <= max_timeout_ms
