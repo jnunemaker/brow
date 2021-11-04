@@ -1,25 +1,40 @@
 require "socket"
 require "thread"
-require "rack"
-require "rack/handler/webrick"
+require "webrick"
 
 class FakeServer
   attr_reader :port, :requests, :thread
 
-  def initialize
+  class Request
+    attr_reader :request_method, :path, :headers, :body
+
+    def initialize(options = {})
+      @request_method = options.fetch(:request_method)
+      @path = options.fetch(:path)
+      @headers = options.fetch(:headers)
+      @body = options.fetch(:body)
+    end
+  end
+
+  def initialize(&block)
     @started = false
     @requests = []
     @thread = Thread.new { server.start }
     Timeout.timeout(10) { :wait until @started }
-  end
 
-  def reset
-    @requests.clear
+    if block_given?
+      begin
+        yield(self)
+      ensure
+        shutdown
+      end
+    end
   end
 
   def shutdown
     if thread
       server.shutdown
+      sleep 0.2
       # Webrick starts thread for request timeouts that doesn't get killed
       # in Server#shutdown.
       WEBrick::Utils::TimeoutHandler.terminate
@@ -48,10 +63,18 @@ class FakeServer
         server_options[:Port] = @port
         retry
       end
-      server.mount '/', Rack::Handler::WEBrick, ->(env) {
-        @requests << Rack::Request.new(env)
-        [200, {}, [""]]
-      }
+
+      server.mount_proc '/' do |req, res|
+        headers = {}
+        req.each { |k, v| headers[k] = v }
+        @requests << Request.new({
+          request_method: req.request_method,
+          path: req.path,
+          body: req.body,
+          headers: headers,
+        })
+      end
+
       server
     end
   end

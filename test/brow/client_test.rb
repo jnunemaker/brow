@@ -3,6 +3,8 @@ require "test_helper"
 class BrowClientTest < Minitest::Test
   def setup
     @queue = Queue.new
+    stub_request(:post, "http://example.com/").
+      to_return(status: 200, body: "", headers: {})
     super
   end
 
@@ -79,7 +81,6 @@ class BrowClientTest < Minitest::Test
   end
 
   def test_push
-    stub_request(:post, "http://example.com/")
     client = build_client
 
     assert_nil client.worker.thread
@@ -92,8 +93,7 @@ class BrowClientTest < Minitest::Test
   end
 
   def test_shutdown_at_exit
-    begin
-      server = FakeServer.new
+    FakeServer.new do |server|
       client = Brow::Client.new({
         url: "http://localhost:#{server.port}/events",
         shutdown_automatically: true,
@@ -106,24 +106,21 @@ class BrowClientTest < Minitest::Test
       assert_equal 1, server.requests.size
       request = server.requests.first
       assert_equal "/events", request.path
-      assert_equal pid, Integer(request.env.fetch("HTTP_CLIENT_PID"))
+      assert_equal pid, Integer(request.headers.fetch("client-pid"))
 
-      assert_equal "Brow v#{Brow::VERSION}", request.env.fetch("HTTP_USER_AGENT")
-      assert_equal "ruby", request.env.fetch("HTTP_CLIENT_LANGUAGE")
+      assert_equal "Brow v#{Brow::VERSION}", request.headers["user-agent"]
+      assert_equal "ruby", request.headers["client-language"]
       assert_equal "#{RUBY_VERSION} p#{RUBY_PATCHLEVEL} (#{RUBY_RELEASE_DATE})",
-        request.env.fetch("HTTP_CLIENT_LANGUAGE_VERSION")
+        request.headers["client-language-version"]
 
-      assert_equal RUBY_PLATFORM, request.env.fetch("HTTP_CLIENT_PLATFORM")
-      assert_equal RUBY_ENGINE, request.env.fetch("HTTP_CLIENT_ENGINE")
-      refute_nil request.env["HTTP_CLIENT_HOSTNAME"]
-    ensure
-      server.shutdown
+      assert_equal RUBY_PLATFORM, request.headers["client-platform"]
+      assert_equal RUBY_ENGINE, request.headers["client-engine"]
+      refute_nil request.headers["client-hostname"]
     end
   end
 
   def test_processes_queue_when_forked
-    begin
-      server = FakeServer.new
+    FakeServer.new do |server|
       client = Brow::Client.new({
         url: "http://localhost:#{server.port}/events",
         shutdown_automatically: true,
@@ -137,24 +134,21 @@ class BrowClientTest < Minitest::Test
       # gotta shutdown the parent process worker
       client.worker.stop
 
-      messages = server.requests.map(&:body).map(&:string).map { |text|
+      messages = server.requests.map(&:body).map { |text|
         JSON.parse(text).fetch("messages")
       }.flatten
 
       assert_equal [1, 2], messages.map { |message| message["n"] }.sort
       assert_equal ["/events"], server.requests.map(&:path).uniq
       pids = server.requests.map { |request|
-        request.env.fetch("HTTP_CLIENT_PID")
+        request.headers.fetch("client-pid")
       }
       assert_equal 2, pids.uniq.size
-    ensure
-      server.shutdown
     end
   end
 
   def test_clears_mutexes_when_forked
-    begin
-      server = FakeServer.new
+    FakeServer.new do |server|
       client = Brow::Client.new({
         url: "http://localhost:#{server.port}/events",
         retries: 2,
@@ -171,9 +165,7 @@ class BrowClientTest < Minitest::Test
       assert_equal 1, server.requests.size
       request = server.requests.first
       assert_equal "/events", request.path
-      assert_equal pid, Integer(request.env.fetch("HTTP_CLIENT_PID"))
-    ensure
-      server.shutdown
+      assert_equal pid, Integer(request.headers.fetch("client-pid"))
     end
   end
 
