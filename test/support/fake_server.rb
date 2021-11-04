@@ -38,6 +38,7 @@ class FakeServer
         StartCallback: -> { @started = true },
         Logger: WEBrick::Log.new(File::NULL, WEBrick::Log::INFO),
         AccessLog: [[File::NULL, WEBrick::AccessLog::COMBINED_LOG_FORMAT]],
+        RequestTimeout: 0.2,
       }
       server = begin
         WEBrick::HTTPServer.new(server_options)
