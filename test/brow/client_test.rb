@@ -3,6 +3,7 @@ require "test_helper"
 class BrowClientTest < Minitest::Test
   def setup
     @queue = Queue.new
+    super
   end
 
   def test_initialize

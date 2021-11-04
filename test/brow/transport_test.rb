@@ -3,6 +3,7 @@ require "test_helper"
 class BrowTransportTest < Minitest::Test
   def setup
     @batch = Brow::MessageBatch.new.tap { |b| b << {n: 1}}
+    super
   end
 
   def test_initialize
