@@ -67,6 +67,18 @@ module Brow
         ENV.fetch("BROW_SHUTDOWN_TIMEOUT", SHUTDOWN_TIMEOUT).to_f
       }
 
+      if @batch_size <= 0
+        raise ArgumentError, ":batch_size must be greater than 0"
+      end
+
+      if @max_queue_size <= 0
+        raise ArgumentError, ":max_queue_size must be greater than 0"
+      end
+
+      if @shutdown_timeout <= 0
+        raise ArgumentError, ":shutdown_timeout must be greater than 0"
+      end
+
       @start_automatically = options.fetch(:start_automatically, true)
 
       if options.fetch(:shutdown_automatically, true)
