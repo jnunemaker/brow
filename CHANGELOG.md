@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2021-11-04
+
+### Added
+
+- Allow configuring most options from ENV variables by default (fb7819b0237a81e573677f3050446a4f41e8fb47).
+- Extra early return to avoid mutex lock if thread is alive (ac7dcfe54ee83b18e0df5ab3778a077584c843bd).
+- Validation on many of the configuration options (c50b11a2917272a87937f8aa86007816a87c63a2 and 07e2581397f870249a347d4d68e4fce172d33cef).
+
+### Changed
+
+- Stop stringifying keys. Just enqueue whatever is passed and let JSON do the rest (2e63d5328e048f0fad9fc41ca0935f97fb5ada2f).
+- A bunch of test stuff to make them faster and less flaky.
+
 ## [0.3.0] - 2021-10-29
 
 https://github.com/jnunemaker/brow/pull/4
