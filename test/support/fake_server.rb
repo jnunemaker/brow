@@ -24,32 +24,12 @@ class FakeServer
   def initialize
     @started = false
     @requests = []
-    @log = StringIO.new
-    @access_log = StringIO.new
     @thread = Thread.new { server.start }
     Timeout.timeout(10) { :wait until @started }
   end
 
-  def log
-    @log.string
-  end
-
-  def log_lines
-    log.split("\n")
-  end
-
-  def access_log
-    @access_log.string
-  end
-
-  def access_lines
-    access_log.split("\n")
-  end
-
   def reset
     @requests.clear
-    @access_log.truncate(0)
-    @log.truncate(0)
   end
 
   def shutdown
@@ -81,8 +61,8 @@ class FakeServer
       server_options = {
         Port: @port,
         StartCallback: -> { @started = true },
-        Logger: WEBrick::Log.new(@log, WEBrick::Log::INFO),
-        AccessLog: [[@access_log, WEBrick::AccessLog::COMBINED_LOG_FORMAT]],
+        Logger: WEBrick::Log.new(File::NULL, WEBrick::Log::INFO),
+        AccessLog: [[File::NULL, WEBrick::AccessLog::COMBINED_LOG_FORMAT]],
       }
       server = begin
         WEBrick::HTTPServer.new(server_options)
