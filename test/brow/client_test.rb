@@ -80,8 +80,8 @@ class BrowClientTest < Minitest::Test
     refute client.push(event)
   end
 
-  def test_push
-    client = build_client
+  def test_push_starts
+    client = build_client(start_automatically: true)
 
     assert_nil client.worker.thread
     client.push(n: 1)
@@ -97,6 +97,7 @@ class BrowClientTest < Minitest::Test
       client = Brow::Client.new({
         url: "http://localhost:#{server.port}/events",
         shutdown_automatically: true,
+        start_automatically: true,
         retries: 2,
       })
 
@@ -124,6 +125,7 @@ class BrowClientTest < Minitest::Test
       client = Brow::Client.new({
         url: "http://localhost:#{server.port}/events",
         shutdown_automatically: true,
+        start_automatically: true,
         retries: 2,
       })
       client.push(n: 1)
@@ -153,6 +155,7 @@ class BrowClientTest < Minitest::Test
         url: "http://localhost:#{server.port}/events",
         retries: 2,
         shutdown_automatically: true,
+        start_automatically: true,
       })
 
       client.worker.mutex.lock
@@ -176,6 +179,7 @@ class BrowClientTest < Minitest::Test
       url: "http://example.com",
       queue: @queue,
       shutdown_automatically: false,
+      start_automatically: false,
     }.merge(options))
   end
 end

@@ -32,8 +32,8 @@ module Brow
     # The worker continuously takes messages off the queue and makes requests to
     # the api.
     #
-    # queue   - Queue synchronized between client and worker
     # options - The Hash of worker options.
+    #   :queue - Queue synchronized between client and worker
     #   :on_error - Proc of what to do on an error.
     #   :batch_size - Fixnum of how many items to send in a batch.
     #   :transport - The Transport object to deliver batches.
@@ -42,6 +42,8 @@ module Brow
     #            via Transport.
     #   :shutdown_timeout - The number of seconds to wait for the worker thread
     #                       to join when shutting down.
+    #   :start_automatically - Should the client start the worker thread
+    #                          automatically and keep it running.
     #   :shutdown_automatically - Should the client shutdown automatically or
     #                             manually. If true, shutdown is automatic. If
     #                             false, you'll need to handle this on your own.
@@ -65,6 +67,8 @@ module Brow
         ENV.fetch("BROW_SHUTDOWN_TIMEOUT", SHUTDOWN_TIMEOUT).to_f
       }
 
+      @start_automatically = options.fetch(:start_automatically, true)
+
       if options.fetch(:shutdown_automatically, true)
         at_exit { stop }
       end
@@ -72,7 +76,7 @@ module Brow
 
     def push(data)
       raise ArgumentError, "data must be a Hash" unless data.is_a?(Hash)
-      start
+      start if @start_automatically
 
       data = Utils.isoify_dates(data)
 
