@@ -10,8 +10,8 @@ require "socket"
 require "thread"
 require "logger"
 require "json"
-require "rack"
-require "rack/handler/webrick"
+require "singleton"
+require "webrick"
 
 class EchoServer
   include Singleton
@@ -33,11 +33,11 @@ class EchoServer
       ],
     })
 
-    @server.mount '/', Rack::Handler::WEBrick, ->(env) {
-      request = Rack::Request.new(env)
-      @logger.debug JSON.parse(request.body.read).inspect
-      [200, {}, [""]]
-    }
+    @server.mount_proc '/' do |request, response|
+      @logger.debug JSON.parse(request.body).inspect
+      response.header["Content-Type"] = "application/json"
+      response.body = "{}"
+    end
 
     @thread = Thread.new { @server.start }
     Timeout.timeout(10) { :wait until @started }
