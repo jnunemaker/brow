@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2021-11-05
+
+- Move progname to logg message so it always appears (5ad1596df79f14d06d7b6dc508b1d5a9282aeebb and 531a999067d398daadc4b13d501e7044bcd3b709)
+- Fix echo server in examples (53eea5af37a888666e8740eac196832b3f67dfc7).
+
 ## [0.4.0] - 2021-11-04
 
 ### Added
