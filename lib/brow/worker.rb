@@ -96,7 +96,7 @@ module Brow
         queue << data
         true
       else
-        logger.warn("[brow]") { "Queue is full, dropping events. The :max_queue_size configuration parameter can be increased to prevent this from happening." }
+        logger.warn { "[brow] Queue is full, dropping events. The :max_queue_size configuration parameter can be increased to prevent this from happening." }
         false
       end
     end
@@ -112,12 +112,12 @@ module Brow
       if @thread
         begin
           if @thread.join(shutdown_timeout)
-            logger.info("[brow]") { "Worker thread [#{@thread.object_id}] joined sucessfully" }
+            logger.info { "[brow] Worker thread [#{@thread.object_id}] joined sucessfully" }
           else
-            logger.info("[brow]") { "Worker thread [#{@thread.object_id}] did not join successfully" }
+            logger.info { "[brow] Worker thread [#{@thread.object_id}] did not join successfully" }
           end
         rescue => error
-          logger.info("[brow]") { "Worker thread [#{@thread.object_id}] error shutting down: #{error.inspect}" }
+          logger.info { "[brow] Worker thread [#{@thread.object_id}] error shutting down: #{error.inspect}" }
         end
       end
     end
@@ -131,7 +131,7 @@ module Brow
 
         case message
         when SHUTDOWN
-          logger.info("[brow]") { "Worker shutting down" }
+          logger.info { "[brow] Worker shutting down" }
           send_batch(batch) unless batch.empty?
           break
         else
@@ -165,7 +165,7 @@ module Brow
       begin
         return if thread_alive?
         @thread = Thread.new { run }
-        logger.debug("[brow]") { "Worker thread [#{@thread.object_id}] started" }
+        logger.debug { "[brow] Worker thread [#{@thread.object_id}] started" }
       ensure
         mutex.unlock
       end

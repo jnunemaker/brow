@@ -50,7 +50,7 @@ module Brow
       message_json_size = message_json.bytesize
 
       if message_too_big?(message_json_size)
-        @logger.error("[brow]") { 'a message exceeded the maximum allowed size' }
+        @logger.error { '[brow] a message exceeded the maximum allowed size' }
       else
         @messages << message
         @json_size += message_json_size + 1 # One byte for the comma
