@@ -6,6 +6,9 @@ require "logger"
 module Brow
   class Error < StandardError; end
 
+  # Private
+  LOG_PREFIX = "[brow]"
+
   # Public: Returns the logger instance to use for logging of things.
   def self.logger
     return @logger if @logger

@@ -86,16 +86,16 @@ module Brow
     #
     # @return [Response] API response
     def send_batch(batch)
-      logger.debug { "[brow] Sending request for #{batch.length} items" }
+      logger.debug { "#{LOG_PREFIX} Sending request for #{batch.length} items" }
 
       last_response, exception = retry_with_backoff(retries) do
         response = send_request(batch)
-        logger.debug { "[brow] Response: status=#{response.code}, body=#{response.body}" }
+        logger.debug { "#{LOG_PREFIX} Response: status=#{response.code}, body=#{response.body}" }
         [Response.new(response.code.to_i, nil), retry?(response)]
       end
 
       if exception
-        logger.error { "[brow] #{exception.message}" }
+        logger.error { "#{LOG_PREFIX} #{exception.message}" }
         exception.backtrace.each { |line| logger.error(line) }
         Response.new(-1, exception.to_s)
       else
@@ -108,7 +108,7 @@ module Brow
 
     # Closes a persistent connection if it exists
     def shutdown
-      logger.info { "[brow] Transport shutting down" }
+      logger.info { "#{LOG_PREFIX} Transport shutting down" }
       @http.finish if @http.started?
     end
 
@@ -118,15 +118,15 @@ module Brow
       status_code = response.code.to_i
       if status_code >= 500
         # Server error. Retry and log.
-        logger.info { "[brow] Server error: status=#{status_code}, body=#{response.body}" }
+        logger.info { "#{LOG_PREFIX} Server error: status=#{status_code}, body=#{response.body}" }
         true
       elsif status_code == 429
         # Rate limited. Retry and log.
-        logger.info { "[brow] Rate limit error: body=#{response.body}" }
+        logger.info { "#{LOG_PREFIX} Rate limit error: body=#{response.body}" }
         true
       elsif status_code >= 400
         # Client error. Do not retry, but log.
-        logger.error { "[brow] Client error: status=#{status_code}, body=#{response.body}" }
+        logger.error { "#{LOG_PREFIX} Client error: status=#{status_code}, body=#{response.body}" }
         false
       else
         false
@@ -148,13 +148,13 @@ module Brow
         result, should_retry = yield
         return [result, nil] unless should_retry
       rescue StandardError => error
-        logger.debug { "[brow] Request error: #{error}" }
+        logger.debug { "#{LOG_PREFIX} Request error: #{error}" }
         should_retry = true
         caught_exception = error
       end
 
       if should_retry && (retries_remaining > 1)
-        logger.debug { "[brow] Retrying request, #{retries_remaining} retries left" }
+        logger.debug { "#{LOG_PREFIX} Retrying request, #{retries_remaining} retries left" }
         sleep(@backoff_policy.next_interval.to_f / 1000)
         retry_with_backoff(retries_remaining - 1, &block)
       else
